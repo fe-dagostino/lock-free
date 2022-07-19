@@ -27,6 +27,7 @@ inline namespace LIB_VERSION {
 template<typename data_t, typename data_size_t, data_size_t threads, 
          data_size_t chunk_size = 64, data_size_t reserve_size = chunk_size, data_size_t max_size = 0 >
 requires std::is_unsigned_v<data_size_t> && (std::is_same_v<data_size_t,u_int32_t> || std::is_same_v<data_size_t,u_int64_t>)
+         && (chunk_size >= 1)
 class multi_queue
 {
 public:
