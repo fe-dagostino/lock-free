@@ -43,13 +43,12 @@ int main( int argc, const char* argv[] )
   (void)argv;
 
   const u_int32_t single_thread_repeat = 1000000;
-  const u_int32_t nthreads = 1;
+  const u_int32_t nthreads = 8;
 
   lock_free::multi_queue<u_int64_t,u_int32_t,nthreads,128,2000000>  mqueue;
-  //moodycamel::ConcurrentQueue<u_int64_t>                mc_queue;
   
   std::thread* prod_X[nthreads];
-  std::thread* cons_X[nthreads];
+  //std::thread* cons_X[nthreads];
 
   ////////////////////////
   // Read START TIME
@@ -65,17 +64,9 @@ int main( int argc, const char* argv[] )
       u_int32_t counter = 0;
       while (counter++ < single_thread_repeat)
       {
-#define MC_IMP  0
-#if (MC_IMP == 1)
-      auto tp_now = utils::now<std::chrono::nanoseconds>();
-      if ( mc_queue.enqueue(tp_now) == false )
-        ++conflicts;
-#else
-      auto tp_now = utils::now<std::chrono::nanoseconds>();
-      if ( mqueue.push(th_num, tp_now) == false)
-        ++conflicts;
-#endif        
-        
+        auto tp_now = utils::now<std::chrono::nanoseconds>();
+        if ( mqueue.push(th_num, tp_now) == false)
+          ++conflicts;
       }
 
       auto tp_end_ms = utils::now<std::chrono::milliseconds>();
