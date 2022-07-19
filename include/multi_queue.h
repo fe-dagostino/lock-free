@@ -56,10 +56,10 @@ public:
 
     /***/
     constexpr inline void * operator new(size_t size) noexcept
-    { return aligned_alloc( size, alignof(node_t) ); }
+    { return aligned_alloc( alignof(node_t), size ); }
     /***/
     constexpr inline void * operator new(size_t size, [[maybe_unused]] const std::nothrow_t& nothrow_value) noexcept
-    { return aligned_alloc( size, alignof(node_t) ); }
+    { return aligned_alloc( alignof(node_t), size ); }
     /***/
     constexpr inline void* operator new ( [[maybe_unused]] std::size_t size, void* ptr) noexcept
     { return ptr; }
