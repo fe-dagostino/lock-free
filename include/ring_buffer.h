@@ -9,6 +9,8 @@
 
 namespace lock_free {
 
+inline namespace LIB_VERSION {
+
 template<typename data_t, typename data_size_t, data_size_t items>
 requires std::is_unsigned_v<data_size_t> && (std::is_same_v<data_size_t,u_int32_t> || std::is_same_v<data_size_t,u_int64_t>)
 class ring_buffer
@@ -136,6 +138,8 @@ private:
   std::atomic<size_type>     m_ndxRead;
   std::atomic<size_type>     m_counter;
 };
+
+} // namespace LIB_VERSION 
 
 }
 
