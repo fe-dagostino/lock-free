@@ -6,6 +6,8 @@
 
 namespace lock_free {
 
+inline namespace LIB_VERSION {
+
 /***
  * data_t        data type held by the multi queue
  * data_size_t   data type to be used internally for counting and sizing. 
@@ -42,21 +44,15 @@ public:
   {
     /***/
     constexpr inline node_t() noexcept
-      : next{nullptr}
+      : _next{nullptr}
     {}
     /***/
     constexpr inline node_t( value_type&& value ) noexcept
-      : next{nullptr}, data(value)
+      : _next{nullptr}, _data(value)
     {}
     /***/
     constexpr inline ~node_t() noexcept
-    {  
-      if (next != nullptr)
-      {
-        delete next;
-        next = nullptr;
-      }
-    }
+    { }
 
     /***/
     constexpr inline void * operator new(size_t size) noexcept
@@ -71,8 +67,8 @@ public:
     constexpr inline void operator delete(void * ptr) noexcept
     { free(ptr); }
 
-    std::atomic<node_t*>   next;
-    value_type             data;
+    std::atomic<node_t*>   _next;
+    value_type             _data;
   };
 
 
@@ -113,7 +109,7 @@ public:
       }
       else
       {
-        old_tail->next.exchange( new_node, std::memory_order_seq_cst );
+        old_tail->_next.exchange( new_node, std::memory_order_seq_cst );
       }
 
       ++_items;
@@ -131,10 +127,10 @@ public:
         return false;
 
       node_t* old_head = cur_head;
-      if ( _head.compare_exchange_strong( cur_head, cur_head->next.load(std::memory_order_acquire) ) == false )
+      if ( _head.compare_exchange_strong( cur_head, cur_head->_next.load(std::memory_order_acquire) ) == false )
         return false;
 
-      data = old_head->data;
+      data = old_head->_data;
       destroy_node(old_head);
       
       --_items;
@@ -152,11 +148,11 @@ public:
         reserve(chunk_size);
       }
 
-      if ( _buff.compare_exchange_strong( new_node, new_node->next, std::memory_order_release ) == false )
+      if ( _buff.compare_exchange_strong( new_node, new_node->_next, std::memory_order_release ) == false )
         return nullptr;
 
-      new_node->data = data;
-      new_node->next = nullptr;
+      new_node->_data = data;
+      new_node->_next = nullptr;
 
       return new_node; 
     }
@@ -165,7 +161,7 @@ public:
     constexpr inline void    destroy_node( node_t* node ) noexcept
     {  
       node_t* buff_node = _buff.exchange( node, std::memory_order_seq_cst );
-      node->next = buff_node;      
+      node->_next = buff_node;      
     }
 
     /***/
@@ -184,13 +180,13 @@ public:
       node_t* cur_next  = new_buff;
       while (items--)
       {
-        cur_next->next = new(std::nothrow) node_t();
-        if (cur_next->next == nullptr)
+        cur_next->_next = new(std::nothrow) node_t();
+        if (cur_next->_next == nullptr)
         {
           return false;
         }
 
-        cur_next = cur_next->next;
+        cur_next = cur_next->_next;
       }
 
       node_t* buff_node = _buff.exchange( new_buff, std::memory_order_seq_cst );
@@ -203,17 +199,22 @@ public:
     /***/
     constexpr inline void    release() noexcept
     {
-      _tail = nullptr;
-      if (_head != nullptr )
+      _tail.store( nullptr, std::memory_order_release );
+
+      node_t* head_cursor = nullptr; 
+      while ( (head_cursor = _head.load(std::memory_order_acquire)) != nullptr )
       {
-        delete _head;
-        _head = nullptr;
+        _head.exchange( head_cursor->_next );
+        delete head_cursor;
       }
-      if (_buff != nullptr )
+
+      node_t* buff_cursor = nullptr; 
+      while ( (buff_cursor = _buff.load(std::memory_order_acquire)) != nullptr )
       {
-        delete _buff;
-        _buff = nullptr;
+        _buff.exchange( buff_cursor->_next );
+        delete buff_cursor;
       }
+
       _items = 0;
     }
  
@@ -267,6 +268,8 @@ protected:
 private:
   std::array<queue_t, threads>  m_array;
 };
+
+} // namespace LIB_VERSION 
 
 }
 
