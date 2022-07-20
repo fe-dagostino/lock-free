@@ -1,3 +1,26 @@
+/**************************************************************************************************
+ * 
+ * Copyright 2022 https://github.com/fe-dagostino
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this 
+ * software and associated documentation files (the "Software"), to deal in the Software 
+ * without restriction, including without limitation the rights to use, copy, modify, 
+ * merge, publish, distribute, sublicense, and/or sell copies of the Software, and to 
+ * permit persons to whom the Software is furnished to do so, subject to the following 
+ * conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all copies 
+ * or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+ * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR 
+ * PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE 
+ * FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR 
+ * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+ * DEALINGS IN THE SOFTWARE.
+ *
+ *************************************************************************************************/
+
 #ifndef LOCK_FREE_MULTI_QUEUE_H
 #define LOCK_FREE_MULTI_QUEUE_H
 
@@ -243,7 +266,7 @@ private:
 
       node_t* buff_node = _buff.exchange( new_buff, std::memory_order_seq_cst );
       if ( buff_node != nullptr )
-        delete buff_node;
+      { release(buff_node); }
 
       return true;
     }
@@ -255,23 +278,30 @@ private:
     {
       _tail.store( nullptr, std::memory_order_release );
 
-      node_t* head_cursor = nullptr; 
-      while ( (head_cursor = _head.load(std::memory_order_acquire)) != nullptr )
-      {
-        _head.exchange( head_cursor->_next );
-        delete head_cursor;
-      }
+      node_t* head_cursor = _head.exchange(nullptr, std::memory_order_acq_rel); 
+      release( head_cursor );
 
-      node_t* buff_cursor = nullptr; 
-      while ( (buff_cursor = _buff.load(std::memory_order_acquire)) != nullptr )
-      {
-        _buff.exchange( buff_cursor->_next );
-        delete buff_cursor;
-      }
+      node_t* buff_cursor = _buff.exchange(nullptr, std::memory_order_acq_rel); 
+      release( buff_cursor );
 
       _items = 0;
     }
- 
+  
+    /**
+     * Delete all items linked to the first @param node releasing memory.
+    */
+    constexpr inline void    release( node_t* node ) noexcept
+    {
+      node_t* cur_node = nullptr;
+      while ( node != nullptr )
+      {
+        cur_node = node;
+        node = cur_node->_next;
+
+        delete cur_node;
+      }
+    }
+
     std::atomic<size_type>    _items;
     std::atomic<node_t*>      _head;
     std::atomic<node_t*>      _tail;
@@ -286,6 +316,7 @@ public:
    * @brief Default Constructor.
    */
   constexpr inline multi_queue()
+    : m_ndx_pop{0}
   { }
 
   /**
@@ -357,22 +388,12 @@ public:
    * 
    * @param data   output parameter updated only in case return value is true. 
    * @return true  in this case @param data is updated with extracted value from the selected queue queue.
-   * @return false all queues are empty.
+   * @return false selected queue is empty, but this doesn't means that all queues are empty.
    */
   constexpr inline bool      pop( value_type& data ) noexcept
   { 
-    size_type qid = 0;
-    size_type max = 0;
-    for( size_type ndx = 0; ndx < queues; ++ndx ) 
-    {
-      size_type size = m_array[ndx].size(); 
-      if (size > max)
-      {
-        max = size;
-        qid = ndx;
-      }
-    }
-
+    size_type qid = m_ndx_pop.load( std::memory_order_acquire );
+    m_ndx_pop.compare_exchange_strong( qid, ((qid+1)<queues)?(qid+1):0 );
     return m_array[qid].pop( data );
   }
 
@@ -380,6 +401,7 @@ protected:
 
 private:
   std::array<queue_t, queues>  m_array;
+  std::atomic<size_type>       m_ndx_pop;
 };
 
 } // namespace LIB_VERSION 
