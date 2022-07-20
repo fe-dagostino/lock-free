@@ -71,6 +71,8 @@ public:
   constexpr ring_buffer()
     : m_ndxWrite( 0 ),m_ndxRead(0),m_counter(0)
   {
+    m_array = std::make_unique<std::array<slot_t, items>>();
+    
     static_assert( m_ndxWrite.is_always_lock_free );
     static_assert( m_ndxRead.is_always_lock_free  );
     static_assert( m_counter.is_always_lock_free  );
@@ -109,11 +111,11 @@ public:
 
     slot_status_t expected = slot_status_t::eFull;
 
-    if ( m_array[ndx].status.compare_exchange_weak( expected, slot_status_t::eBusyForRead, std::memory_order_release, std::memory_order_acquire ) )
+    if ( (*m_array)[ndx].status.compare_exchange_weak( expected, slot_status_t::eBusyForRead, std::memory_order_release, std::memory_order_acquire ) )
     {
-      data = m_array[ndx].data;
+      data = (*m_array)[ndx].data;
 
-      m_array[ndx].status.store( slot_status_t::eEmpty, std::memory_order_release );
+      (*m_array)[ndx].status.store( slot_status_t::eEmpty, std::memory_order_release );
       --m_counter;
 
       return true;
@@ -141,11 +143,11 @@ private:
 
     slot_status_t expected = slot_status_t::eEmpty;
 
-    if ( m_array[ndx].status.compare_exchange_weak( expected, slot_status_t::eBusyForWrite, std::memory_order_release, std::memory_order_acquire ) )
+    if ( (*m_array)[ndx].status.compare_exchange_weak( expected, slot_status_t::eBusyForWrite, std::memory_order_release, std::memory_order_acquire ) )
     {
-      m_array[ndx].data = data;
+      (*m_array)[ndx].data = data;
 
-      m_array[ndx].status.store( slot_status_t::eFull, std::memory_order_release );
+      (*m_array)[ndx].status.store( slot_status_t::eFull, std::memory_order_release );
       ++m_counter;
 
       return true;
@@ -155,11 +157,11 @@ private:
   }
 
 private:
-  std::array<slot_t, items>  m_array;
+  std::unique_ptr<std::array<slot_t, items>>  m_array;
   
-  std::atomic<size_type>     m_ndxWrite;
-  std::atomic<size_type>     m_ndxRead;
-  std::atomic<size_type>     m_counter;
+  std::atomic<size_type>                      m_ndxWrite;
+  std::atomic<size_type>                      m_ndxRead;
+  std::atomic<size_type>                      m_counter;
 };
 
 } // namespace LIB_VERSION 
