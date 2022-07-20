@@ -1,8 +1,10 @@
 # Lock-Free data structures
 
-This repository will be populated with lock-free structures taking implementation simple and hopefully readable for everyone.
+This repository will be populated with lock-free structures, keeping implementation simple and hopefully readable for everyone. 
 
-Current implementation:
+Current data structures implementations leverage C++20, so in order to build examples or to use such the following implementations a compiler that support at least C++20 is a pre-requirements. 
+
+Actually, the following data structures have been implemented:
 * ring-buffer 
 * multi-queue
 
