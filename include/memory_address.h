@@ -24,7 +24,6 @@
 #ifndef LOCK_FREE_MEMORY_ADDRESS_H
 #define LOCK_FREE_MEMORY_ADDRESS_H
 
-#include <atomic>
 #include <bit>
 #include <type_traits>
 #include <cstddef>
