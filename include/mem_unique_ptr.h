@@ -129,7 +129,11 @@ public:
   { return get(); }
 
   /***/
-  constexpr inline pointer get() const noexcept
+  constexpr inline pointer get() noexcept
+  { return _ptr; }
+
+  /***/
+  constexpr inline const_pointer get() const noexcept
   { return _ptr; }
 
   /***/
