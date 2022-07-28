@@ -46,19 +46,19 @@ template <Data_t data_t>
 class mem_unique_ptr
 {
   using value_type      = data_t; 
-  using reference       = data_t&;
-  using const_reference = const data_t&;
-  using pointer         = data_t*;
-  using const_pointer   = const data_t*;
+  using reference       = value_type&;
+  using const_reference = const value_type&;
+  using pointer         = value_type*;
+  using const_pointer   = const value_type*;
 
-  using mem_address     = memory_address<pointer,size_t>;
+  using mem_address     = memory_address<value_type,size_t>;
 
 public:
   /***/
   constexpr inline mem_unique_ptr( ) noexcept
     : _ptr( nullptr, mem_address::address_flags::DESTROY )
   { }
-
+  /***/
   constexpr inline mem_unique_ptr( std::nullptr_t ) noexcept
     : _ptr( nullptr, mem_address::address_flags::DESTROY )
   { }
@@ -71,27 +71,27 @@ public:
   /***/
   template<Derived<value_type> T>
   constexpr inline mem_unique_ptr( T* ptr, bool autodelete = true ) noexcept
-    : _ptr( ptr, (autodelete)?mem_address::address_flags::DESTROY:0 )
+    : _ptr( ptr, (autodelete)?(uint32_t)(mem_address::address_flags::DESTROY):(uint32_t)0 )
   { }
 
   /***/
   template<Derived<value_type> T>
   constexpr inline mem_unique_ptr( std::unique_ptr<T>&& ptr, bool autodelete = true ) noexcept
-    : _ptr( ptr.release(), (autodelete)?mem_address::address_flags::DESTROY:0 )
+    : _ptr( ptr.release(), (autodelete)?(uint32_t)(mem_address::address_flags::DESTROY):(uint32_t)0 )
   { }
 
   /***/
   template<Derived<value_type> T>
   constexpr inline mem_unique_ptr( mem_unique_ptr<T>&& ptr ) noexcept
-    : _ptr( ptr.release(), (ptr.auto_delete())?mem_address::address_flags::DESTROY:0 )
+    : _ptr( ptr.release(), (ptr.auto_delete())?(uint32_t)(mem_address::address_flags::DESTROY):(uint32_t)0 )
   { }
 
   /***/
   constexpr inline ~mem_unique_ptr() noexcept
   {
-    if ((_ptr.auto_delete()) && ( _ptr != nullptr ))
+    if ((auto_delete()) && ( _ptr != nullptr ))
     {
-      delete _ptr;
+      delete (pointer)_ptr;
       _ptr.set_address( nullptr, 0 );
     }
   }
