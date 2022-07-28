@@ -75,8 +75,9 @@ else()
   endif()
 endif()
 
-option(LF_BUILD_EXAMPLES "Enable/Disable examples build"  ON)
-option(LF_BUILD_TESTS    "Enable/Disable tests build"    OFF)
+option(LF_BUILD_BENCHMARKS "Enable/Disable benchmarks build" OFF)
+option(LF_BUILD_EXAMPLES   "Enable/Disable examples build"   OFF)
+option(LF_BUILD_TESTS      "Enable/Disable tests build"      OFF)
 
 file( GLOB_RECURSE 
       LIB_INCLUDE
@@ -102,6 +103,10 @@ file( GLOB_RECURSE
 #target_include_directories( ${libname}${LIB_VERSION_A}  INTERFACE 
 #                            "${CMAKE_CURRENT_SOURCE_DIR}/include" 
 #                          )
+
+if ( LF_BUILD_BENCHMARKS )
+  add_subdirectory(benchmarks)
+endif()
 
 if ( LF_BUILD_EXAMPLES )
   add_subdirectory(examples)
