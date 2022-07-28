@@ -34,6 +34,15 @@ namespace lock_free {
 inline namespace LIB_VERSION {
 
 
+/***
+ * An arena_allocator implementation that keep both alloc() and dealloc() to a complexity of O(1).
+ * 
+ * This arena_allocator is useful when :
+ *  - in a program there is an extensive use of "new" and "delete" for a well-defined "data type";
+ *  - we want to avoid memory fragmentation, since the program is supposed to run for long time without interruptions;
+ *  - performances in our program are important and we want to avoid waste of CPU cycles.
+ * 
+*/
 template< typename data_t, typename data_size_t, data_size_t items = 1024> 
 requires std::is_unsigned_v<data_size_t> && (std::is_same_v<data_size_t,u_int32_t> || std::is_same_v<data_size_t,u_int64_t>)
          && ( ((sizeof(data_t) % alignof(std::max_align_t)) == 0 ) || ((alignof(std::max_align_t) % sizeof(data_t)) == 0 ) )
@@ -103,7 +112,7 @@ private:
 
 public:
   /***/
-  arena_allocator()
+  constexpr arena_allocator() noexcept
     : _first_slot( nullptr ), _last_slot( nullptr ), _next_free(nullptr), _used_slots(0)
   {
     _first_slot = static_cast<slot_pointer>(std::aligned_alloc( alignof(std::max_align_t), memory_required ));
@@ -126,7 +135,7 @@ public:
   }
 
   /***/
-  ~arena_allocator()
+  constexpr ~arena_allocator() noexcept
   {
     // Iterate on overall slots in order to invoke ~value_type() 
     // for all object currently in use.
@@ -150,7 +159,7 @@ public:
    * 
    * @return sizeof(data_t) 
    */
-  constexpr size_type  type_size() const noexcept
+  constexpr inline size_type  type_size() const noexcept
   { return value_type_size; }
 
   /**
@@ -175,6 +184,14 @@ public:
   { return _used_slots; }
 
   /**
+   * @brief Return max lenght for this arena_allocator.
+   * 
+   * @return max number of items accordingly with @tparam items. 
+   */
+  constexpr inline size_type  max_length() const noexcept
+  { return items; }
+
+  /**
    * @brief  Retrieve the size in bytes currently allocated for user data.
    * 
    * @return current size for the allocated buffer. 
@@ -188,12 +205,6 @@ public:
   constexpr inline size_type  max_size() const noexcept
   { return std::numeric_limits<size_type>::max() / memory_slot_size; }
   
-  /***/
-
-  /***/
-  constexpr inline size_type  max_msize() const noexcept
-  { return items; }
-
   /**
    * @brief Allocate memory for value_type() object and invoke
    *        constructur accordingly with parameters.
@@ -209,7 +220,7 @@ public:
    * @return value_type* to constructed object.
    */
   template< typename... Args > 
-  constexpr inline pointer allocate( Args&&... args ) noexcept
+  constexpr inline pointer    allocate( Args&&... args ) noexcept
   { 
     _mtx_next.lock();
 
@@ -237,7 +248,7 @@ public:
    *  
    * @param userdata  pointer to user data previously allocated with allocate().
    */
-  constexpr inline void deallocate( pointer userdata ) noexcept
+  constexpr inline void       deallocate( pointer userdata ) noexcept
   {
     assert( userdata != nullptr );
 
@@ -275,7 +286,7 @@ public:
    * @return value_type* to constructed object.
    */
   template< typename... Args >
-  constexpr inline pointer unsafe_allocate( Args&&... args ) noexcept
+  constexpr inline pointer    unsafe_allocate( Args&&... args ) noexcept
   { 
     slot_pointer pCurrSlot = _next_free;
     if ( pCurrSlot == nullptr )
@@ -301,7 +312,7 @@ public:
    *  
    * @param userdata  pointer to user data previously allocated with allocate().
    */
-  constexpr inline void unsafe_deallocate( pointer userdata ) noexcept
+  constexpr inline void       unsafe_deallocate( pointer userdata ) noexcept
   {
     assert( userdata != nullptr );
 
