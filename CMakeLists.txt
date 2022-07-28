@@ -89,20 +89,28 @@ file( GLOB_RECURSE
       ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
     )
 
-#add_library   ( ${libname}${LIB_VERSION_SO}   SHARED ${LIB_SRC} )
-#add_library   ( ${libname}${LIB_VERSION_A}    STATIC ${LIB_SRC} )
+add_library   ( ${libname}${LIB_VERSION_SO}   SHARED ${LIB_SRC} )
+add_library   ( ${libname}${LIB_VERSION_A}    STATIC ${LIB_SRC} )
 
-#target_link_libraries( ${libname}${LIB_VERSION_SO}  ${EXT_LIBRARIES} )
-#target_link_libraries( ${libname}${LIB_VERSION_A}   ${EXT_LIBRARIES} )
-#target_link_libraries( ${libname}${LIB_VERSION_SO}  ${CMAKE_DL_LIBS} )
-#target_link_libraries( ${libname}${LIB_VERSION_A}   ${CMAKE_DL_LIBS} )
+target_link_libraries( ${libname}${LIB_VERSION_SO}  ${EXT_LIBRARIES} )
+target_link_libraries( ${libname}${LIB_VERSION_A}   ${EXT_LIBRARIES} )
+target_link_libraries( ${libname}${LIB_VERSION_SO}  ${CMAKE_DL_LIBS} )
+target_link_libraries( ${libname}${LIB_VERSION_A}   ${CMAKE_DL_LIBS} )
 
-#target_include_directories( ${libname}${LIB_VERSION_SO} INTERFACE 
-#                            "${CMAKE_CURRENT_SOURCE_DIR}/include" 
-#                          )
-#target_include_directories( ${libname}${LIB_VERSION_A}  INTERFACE 
-#                            "${CMAKE_CURRENT_SOURCE_DIR}/include" 
-#                          )
+target_include_directories( ${libname}${LIB_VERSION_SO}
+                            PUBLIC
+                              $<INSTALL_INTERFACE:include>
+                              $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+                            PRIVATE
+                              ${CMAKE_CURRENT_SOURCE_DIR}/src
+                          )
+target_include_directories( ${libname}${LIB_VERSION_A}
+                            PUBLIC
+                              $<INSTALL_INTERFACE:include>
+                              $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+                            PRIVATE
+                              ${CMAKE_CURRENT_SOURCE_DIR}/src
+                          )
 
 if ( LF_BUILD_BENCHMARKS )
   add_subdirectory(benchmarks)
