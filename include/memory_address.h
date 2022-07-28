@@ -21,14 +21,14 @@
  *
  *************************************************************************************************/
 
-#ifndef LOCK_FREE_MEMORY_ADDRESS_H
-#define LOCK_FREE_MEMORY_ADDRESS_H
+#ifndef CORE_MEMORY_ADDRESS_H
+#define CORE_MEMORY_ADDRESS_H
 
 #include <bit>
 #include <type_traits>
 #include <cstddef>
 
-namespace lock_free {
+namespace core {
 
 inline namespace LIB_VERSION {
 
@@ -124,4 +124,4 @@ private:
 
 }
 
-#endif //LOCK_FREE_MEMORY_ADDRESS_H
+#endif // CORE_MEMORY_ADDRESS_H
