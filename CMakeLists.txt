@@ -98,6 +98,8 @@ target_link_libraries( ${libname}${LIB_VERSION_SO}  ${CMAKE_DL_LIBS} )
 target_link_libraries( ${libname}${LIB_VERSION_A}   ${CMAKE_DL_LIBS} )
 
 target_include_directories( ${libname}${LIB_VERSION_SO}
+                            INTERFACE
+                              "${CMAKE_CURRENT_SOURCE_DIR}/include"
                             PUBLIC
                               $<INSTALL_INTERFACE:include>
                               $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
