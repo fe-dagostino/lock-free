@@ -83,11 +83,11 @@ private:
 
     /***/
     constexpr inline bool         in_use() const noexcept
-    { return _ptr_next.test_flag(memory_address<memory_slot,size_type>::address_flags::IN_USE); }
+    { return _ptr_next.test_flag(memory_address<memory_slot,size_type>::address_flags::DESTROY); }
 
     /***/
     constexpr inline bool         is_free() const noexcept
-    { return !_ptr_next.test_flag(memory_address<memory_slot,size_type>::address_flags::IN_USE); }
+    { return !_ptr_next.test_flag(memory_address<memory_slot,size_type>::address_flags::DESTROY); }
 
     /***/
     constexpr inline void         set_free( memory_slot* next_free ) noexcept
@@ -95,7 +95,7 @@ private:
 
     /***/
     constexpr inline void         set_in_use() noexcept
-    { _ptr_next.set_address( nullptr, (size_type)memory_address<memory_slot,size_type>::address_flags::IN_USE); }
+    { _ptr_next.set_address( nullptr, (size_type)memory_address<memory_slot,size_type>::address_flags::DESTROY); }
     
     /***/
     constexpr static inline memory_slot* slot_from_user_data( pointer ptr ) noexcept

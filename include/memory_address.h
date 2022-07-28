@@ -72,7 +72,7 @@ public:
   typedef std::conditional_t< (sizeof(pointer)==8), uint64_t, uint32_t >  base_t;
 
   enum class address_flags : base_t {
-    IN_USE = 0x0001
+    DESTROY = 0x0001
   };
 
   /***/
