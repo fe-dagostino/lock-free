@@ -82,8 +82,12 @@ public:
   /***/
   constexpr inline memory_address( pointer ptr ) noexcept
     : _addr( std::bit_cast<base_t>(ptr) ), _flags(0)
+  {}  
+  /***/
+  constexpr inline memory_address( pointer ptr, base_t flags ) noexcept
+    : _addr( std::bit_cast<base_t>(ptr) ), _flags(flags)
   {}
-  
+
   /***/  
   constexpr inline operator pointer() noexcept
   { return std::bit_cast<pointer>(_addr); }
