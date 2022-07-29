@@ -2,10 +2,10 @@
 
 #include "arena_allocator.h"
 
-
+#include "mem_unique_ptr.h"
 
 struct data_item_t {
-  
+ 
   constexpr data_item_t() noexcept
   {
     printf("data_item_t()\n");
@@ -52,8 +52,8 @@ int main( int argc, const char* argv[] )
   std::cout << std::endl;
   std::cout << std::endl;
 
-  data_item_t*  pDataItem_1 = allocator.allocate( 10 );
-  data_item_t*  pDataItem_2 = allocator.allocate( 42 );
+  data_item_t*  pDataItem_1 = allocator.allocate( 1 );
+  data_item_t*  pDataItem_2 = allocator.allocate( 2 );
 
   std::cout << std::endl;
   std::cout << std::endl;
@@ -63,6 +63,23 @@ int main( int argc, const char* argv[] )
   std::cout << "data_item_1  : " << pDataItem_1->data      << std::endl;
   std::cout << "data_item_2  : " << pDataItem_2->data      << std::endl;
 
+  std::cout << std::endl;
+  std::cout << std::endl;
+
+  // Create a pointer to data_item_t not managed by arena_allocator;
+  std::cout << "Create a pointer to data_item_t ( pDataItem_ext ) not managed by arena_allocator" << std::endl;
+  data_item_t*  pDataItem_ext = new data_item_t(404);
+  std::cout << std::endl;
+  std::cout << "calling allocator.is_valid( pDataItem_ext )" << std::endl;
+  std::cout << " -- result = " << (allocator.is_valid(pDataItem_ext)?"TRUE":"FALSE") << std::endl;
+  std::cout << "calling allocator.is_valid( pDataItem_1 )" << std::endl;
+  std::cout << " -- result = " << (allocator.is_valid(pDataItem_1)?"TRUE":"FALSE") << std::endl;
+  std::cout << "calling allocator.is_valid( pDataItem_2 )" << std::endl;
+  std::cout << " -- result = " << (allocator.is_valid(pDataItem_2)?"TRUE":"FALSE") << std::endl;
+  std::cout << std::endl;
+  std::cout << "Destroy ( pDataItem_ext ) instance." << std::endl;
+  delete pDataItem_ext;
+  
   std::cout << std::endl;
   std::cout << std::endl;
 
