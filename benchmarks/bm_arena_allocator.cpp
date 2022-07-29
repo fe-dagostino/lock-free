@@ -41,8 +41,6 @@ int main( int argc, const char* argv[] )
   (void)argc;
   (void)argv;
 
-
-
   const uint32_t c_pre_items = 1000000;
   
   lock_free::arena_allocator<data_item_t,u_int32_t,c_pre_items>   allocator;
