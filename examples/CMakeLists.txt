@@ -5,7 +5,7 @@ project( examples
 )
 
 # Add the temporary output directories to the library path to make sure that
-# libcsv can be found, even if it is not installed system-wide yet.
+# parent files can be found, even if it is not installed system-wide yet.
 LINK_DIRECTORIES( ${LIB_BINARY_DIR} )
 
 set(  DEFAULT_LIBRARIES
@@ -18,9 +18,13 @@ if ( LF_ENABLE_CPPCHECK )
   set(CMAKE_CXX_CPPCHECK "cppcheck")
 endif()
 
+add_executable( arena_allocator              arena_allocator.cpp    )
 add_executable( rbuffer                      rbuffer.cpp            )
-add_executable( mqueue                       mqueue.cpp             )
+#add_executable( mqueue                       mqueue.cpp             )
+#add_executable( mqueue_perf_1                mqueue_perf_1.cpp      )
 
 
+target_link_libraries( arena_allocator                ${DEFAULT_LIBRARIES}   )
 target_link_libraries( rbuffer                        ${DEFAULT_LIBRARIES}   )
-target_link_libraries( mqueue                         ${DEFAULT_LIBRARIES}   )
+#target_link_libraries( mqueue                         ${DEFAULT_LIBRARIES}   )
+#target_link_libraries( mqueue_perf_1                  ${DEFAULT_LIBRARIES}   )
