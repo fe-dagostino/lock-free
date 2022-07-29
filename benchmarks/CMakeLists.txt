@@ -29,7 +29,10 @@ if ( LF_ENABLE_CPPCHECK )
   set(CMAKE_CXX_CPPCHECK "cppcheck")
 endif()
 
-add_executable( bm_arena_allocator              bm_arena_allocator.cpp    )
-
+add_executable( bm_arena_allocator              bm_arena_allocator.cpp           )
+#add_executable( bm_arena_allocator_resize       bm_arena_allocator_resize.cpp    )
+#add_executable( bm_queue                        bm_queue.cpp                     )
 
 target_link_libraries( bm_arena_allocator                ${DEFAULT_LIBRARIES}   )
+#target_link_libraries( bm_arena_allocator_resize         ${DEFAULT_LIBRARIES}   )
+#target_link_libraries( bm_queue                          ${DEFAULT_LIBRARIES}   )
