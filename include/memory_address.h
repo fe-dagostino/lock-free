@@ -89,12 +89,8 @@ public:
   {}
 
   /***/  
-  constexpr inline operator pointer() noexcept
+  constexpr inline operator pointer() const noexcept
   { return std::bit_cast<pointer>(_addr); }
-  
-  /***/  
-  constexpr inline operator const_pointer() const noexcept
-  { return std::bit_cast<const_pointer>(_addr); }
 
   /***/
   constexpr inline void   set_address( pointer ptr, base_t flags = 0 ) noexcept

@@ -56,11 +56,11 @@ class mem_unique_ptr
 public:
   /***/
   constexpr inline mem_unique_ptr( ) noexcept
-    : _ptr( nullptr, mem_address::address_flags::DESTROY )
+    : _ptr( )
   { }
   /***/
   constexpr inline mem_unique_ptr( std::nullptr_t ) noexcept
-    : _ptr( nullptr, mem_address::address_flags::DESTROY )
+    : _ptr( )
   { }
 
   /**
@@ -118,33 +118,18 @@ public:
   }
 
   /***/
-  constexpr inline reference        operator*() noexcept
+  constexpr inline reference        operator*() const noexcept
   {
     static_assert(get() != pointer());
     return *get();
   }
 
   /***/
-  constexpr inline const_reference  operator*() const noexcept
-  {
-    static_assert(get() != pointer());
-    return *get();
-  }  
-
-  /***/
-  constexpr inline pointer          operator->() noexcept
+  constexpr inline pointer          operator->() const noexcept
   { return get(); }
   
   /***/
-  constexpr inline const_pointer    operator->() const noexcept
-  { return get(); }
-
-  /***/
-  constexpr inline pointer          get() noexcept
-  { return _ptr; }
-
-  /***/
-  constexpr inline const_pointer    get() const noexcept
+  constexpr inline pointer          get() const noexcept
   { return _ptr; }
 
   /***/
