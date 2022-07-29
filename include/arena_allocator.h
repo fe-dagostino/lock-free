@@ -25,9 +25,11 @@
 #define LOCK_FREE_ARENA_ALLOCATOR_H
 
 #include <mutex>
+#include <vector>
 #include <assert.h>
 
 #include "memory_address.h"
+
 
 namespace lock_free {
 
@@ -43,10 +45,13 @@ inline namespace LIB_VERSION {
  *  - performances in our program are important and we want to avoid waste of CPU cycles.
  * 
 */
-template< typename data_t, typename data_size_t, data_size_t items = 1024> 
+template< typename data_t, typename data_size_t, 
+          data_size_t chunk_size = 1024, data_size_t initial_size = chunk_size, data_size_t size_limit = 0
+        > 
 requires std::is_unsigned_v<data_size_t> && (std::is_same_v<data_size_t,u_int32_t> || std::is_same_v<data_size_t,u_int64_t>)
          && ( ((sizeof(data_t) % alignof(std::max_align_t)) == 0 ) || ((alignof(std::max_align_t) % sizeof(data_t)) == 0 ) )
-         && ( items > 0 ) && ((sizeof(void*)==4) || (sizeof(void*)==8))
+         && ( chunk_size > 0 ) && ( initial_size >= chunk_size )
+         && ((sizeof(void*)==4) || (sizeof(void*)==8))
 class arena_allocator
 {
 public:
@@ -107,51 +112,27 @@ private:
 
   using slot_pointer     = memory_slot*;
   
-  static constexpr const size_type memory_slot_size = sizeof(memory_slot);
-  static constexpr const size_type memory_required  = memory_slot_size*items;
+  static constexpr const size_type memory_slot_size           = sizeof(memory_slot);
+  static constexpr const size_type memory_required_per_chunk  = memory_slot_size*chunk_size;
 
 public:
+
   /***/
-  constexpr arena_allocator() noexcept
-    : _first_slot( nullptr ), _last_slot( nullptr ), _next_free(nullptr), _used_slots(0)
+  constexpr inline arena_allocator() noexcept
+    : _next_free(nullptr), _used_slots(0)
   {
-    _first_slot = static_cast<slot_pointer>(std::aligned_alloc( alignof(std::max_align_t), memory_required ));
-    if ( _first_slot == nullptr )
+    while ( max_length() < initial_size )
     {
-      return;
-    }
-
-    _next_free  = _first_slot; // next free item initialized with first item._
-    _last_slot  = _first_slot+(items-1);
-
-    // Iterate on overall slots in order to initialize the slots chain.
-    slot_pointer mem_curs = _first_slot;
-    size_type    slots_nb = items; 
-    while ( slots_nb-- )
-    {
-      mem_curs = new(mem_curs) memory_slot((slots_nb>0)?(mem_curs+1):nullptr);
-      mem_curs++;
+      if ( add_mem_chuck() == false )
+      { break; }
     }
   }
 
   /***/
-  constexpr ~arena_allocator() noexcept
+  constexpr inline ~arena_allocator() noexcept
   {
-    // Iterate on overall slots in order to invoke ~value_type() 
-    // for all object currently in use.
-    slot_pointer mem_curs = _first_slot;
-    size_type    slots_nb = 0; 
-
-    while ( slots_nb++ < items )
-    {
-      if ( mem_curs->in_use() == true )
-        mem_curs->prt()->~value_type();
-
-      mem_curs++;
-    }
-
-    // Release memory allocated in the in the constructor.
-    std::free( _first_slot );
+    // Release all chunks
+    clear();
   }
 
   /**
@@ -189,15 +170,25 @@ public:
    * @return max number of items accordingly with @tparam items. 
    */
   constexpr inline size_type  max_length() const noexcept
-  { return items; }
+  { 
+    _mtx_next.lock();
+    size_type ret_val = chunk_size*_mem_chunks.size();
+    _mtx_next.unlock();
+    return ret_val; 
+  }
 
   /**
-   * @brief  Retrieve the size in bytes currently allocated for user data.
+   * @brief  Retrieve the size in bytes currently allocated.
    * 
    * @return current size for the allocated buffer. 
    */
   constexpr inline size_type  capacity() const noexcept
-  { return memory_required; }
+  { 
+    _mtx_next.lock();
+    size_type ret_val = memory_required_per_chunk*_mem_chunks.size();
+    _mtx_next.unlock();
+    return ret_val;     
+  }
 
   /**
    * @brief Return the largest supported allocation size.
@@ -224,16 +215,16 @@ public:
   { 
     _mtx_next.lock();
 
-    slot_pointer pCurrSlot = _next_free;
-    if ( pCurrSlot == nullptr )
-    {
-      _mtx_next.unlock();
-      return nullptr;
-    }
+      slot_pointer pCurrSlot = _next_free;
+      if ( pCurrSlot == nullptr )
+      {
+        _mtx_next.unlock();
+        return nullptr;
+      }
 
-    _next_free = pCurrSlot->next();
-    pCurrSlot->set_in_use();
-    ++_used_slots;
+      _next_free = pCurrSlot->next();
+      pCurrSlot->set_in_use();
+      ++_used_slots;
     
     _mtx_next.unlock();
 
@@ -245,6 +236,12 @@ public:
    * 
    *        Note: this function is thread safe, if you are in single
    *              thread context evaluate to use unsafe_allocate() instead.
+   * 
+   *        Note: only memory allocated by this arena_allocator can be deallocated.
+   *              In case the user try to deallocate memory not managed from the arena_allocator
+   *              application will experience unexpected behaviour. Consistency check require O(n) 
+   *              where 'n' is the number of chunks allocated, so not implemented in order to have
+   *              deallocation with O(1).
    *  
    * @param userdata  pointer to user data previously allocated with allocate().
    */
@@ -253,18 +250,16 @@ public:
     assert( userdata != nullptr );
 
     slot_pointer  pSlot = memory_slot::slot_from_user_data(userdata);
-    if ( (pSlot-_first_slot) < items )
-    {
-      pSlot->prt()->~value_type();
 
-      _mtx_next.lock();
+    pSlot->prt()->~value_type();
+
+    _mtx_next.lock();
 
       pSlot->set_free( _next_free );
       _next_free = pSlot;
       --_used_slots;
 
-      _mtx_next.unlock();
-    }
+    _mtx_next.unlock();
   }
 
   /**
@@ -310,6 +305,12 @@ public:
    * 
    *        Note: unsafe_ can be up to 40% faster if compared to thread safe method.
    *  
+   *        Note: only memory allocated by this arena_allocator can be deallocated.
+   *              In case the user try to deallocate memory not managed from the arena_allocator
+   *              application will experience unexpected behaviour. Consistency check require O(n) 
+   *              where 'n' is the number of chunks allocated, so not implemented in order to have
+   *              deallocation with O(1).
+   *   
    * @param userdata  pointer to user data previously allocated with allocate().
    */
   constexpr inline void       unsafe_deallocate( pointer userdata ) noexcept
@@ -317,24 +318,143 @@ public:
     assert( userdata != nullptr );
 
     slot_pointer  pSlot = memory_slot::slot_from_user_data(userdata);
-    if ( (pSlot-_first_slot) < items )
-    {
-      pSlot->prt()->~value_type();
 
-      pSlot->set_free( _next_free );
-      _next_free = pSlot;
-      --_used_slots;
+    pSlot->prt()->~value_type();
+
+    pSlot->set_free( _next_free );
+    _next_free = pSlot;
+    --_used_slots;
+  }
+
+  /**
+   * @brief Check if specified pointer is managed by arena_allocator.
+   * 
+   * @param userdata pointer to user data previously returned by allocate() or unsafe_allocate().
+   * @return true    if memory address is in the range managed by arena_allocator instance
+   * @return false   if memory address is do not fit in any allocated memory chunk
+   */
+  [[nodiscard]] constexpr inline bool is_valid( pointer userdata ) const
+  {
+    std::lock_guard mtx(_mtx_next);
+    
+    return usafe_is_valid( userdata );
+  }
+
+  /**
+   * @brief Check if specified pointer is managed by arena_allocator.
+   * 
+   * @param userdata pointer to user data previously returned by allocate() or unsafe_allocate().
+   * @return true    if memory address is in the range managed by arena_allocator instance
+   * @return false   if memory address is do not fit in any allocated memory chunk
+   */
+  [[nodiscard]] constexpr inline bool usafe_is_valid( pointer userdata ) const
+  {
+    if ( userdata == nullptr )
+      return false;
+
+    using addr_base_type = core::memory_address<memory_slot,size_type>::base_t;
+
+    const addr_base_type addr_offset = core::memory_address<memory_slot,size_type>::memory_address_size;
+
+    for ( auto& mc : _mem_chunks )
+    {
+      if (
+          ( std::bit_cast<addr_base_type>(userdata) >= std::bit_cast<addr_base_type>(mc._first_slot)+addr_offset ) && 
+          ( std::bit_cast<addr_base_type>(userdata) <= std::bit_cast<addr_base_type>(mc._last_slot )+addr_offset )
+         )
+         return true;
     }
+
+    return false;
   }
 
 private:
-  slot_pointer        _first_slot;
-  slot_pointer        _last_slot;
-  slot_pointer        _next_free;
-  
-  size_type           _used_slots;
+  /***/
+  [[nodiscard]] constexpr inline bool add_mem_chuck() noexcept
+  {
+    memory_chunk _new_mem_chunck;
+   
+    _new_mem_chunck._first_slot = static_cast<slot_pointer>(std::aligned_alloc( alignof(std::max_align_t), memory_required_per_chunk ));
+    if ( _new_mem_chunck._first_slot == nullptr )
+    { return false; }
 
-  mutable std::mutex  _mtx_next;
+    _new_mem_chunck._last_slot  = _new_mem_chunck._first_slot+(chunk_size-1);
+
+    // Iterate on overall slots in order to initialize the slots chain.
+    slot_pointer mem_curs = _new_mem_chunck._first_slot;
+    size_type    slots_nb = chunk_size; 
+    while ( slots_nb-- )
+    {
+      mem_curs = new(mem_curs) memory_slot((slots_nb>0)?(mem_curs+1):nullptr);
+      mem_curs++;
+    }
+
+    // Protect access to _next_free
+    _mtx_next.lock();
+
+      if (_next_free != nullptr )
+      {
+        _new_mem_chunck._last_slot = _next_free;
+      }
+      _next_free  = _new_mem_chunck._first_slot; // next free item initialized with first item._
+
+      /////////////////////
+      // Store chunck information in a vector.
+      _mem_chunks.push_back(_new_mem_chunck);
+
+    // Release _next_free mutex
+    _mtx_next.unlock();
+
+    return true;
+  }
+
+  constexpr inline void clear() noexcept
+  {
+    for ( auto& mc : _mem_chunks )
+    {
+      // Iterate on overall slots in order to invoke ~value_type() 
+      // for all object currently in use.
+      slot_pointer mem_curs = mc._first_slot;
+      size_type    slots_nb = 0; 
+  
+      while ( slots_nb++ < chunk_size )
+      {
+        if ( mem_curs->in_use() == true )
+          mem_curs->prt()->~value_type();
+
+        mem_curs++;
+      }
+  
+      // Release memory allocated in the in the constructor.
+      std::free( mc._first_slot );
+      
+      mc.reset();
+    }
+    _mem_chunks.clear();
+  }
+
+private:
+  struct memory_chunk {
+    constexpr inline memory_chunk() noexcept
+      : _first_slot(nullptr), _last_slot(nullptr)
+    {}
+    /* Set both pointer to nullptr */
+    constexpr inline void reset() noexcept
+    {
+      _first_slot = nullptr;
+      _last_slot  = nullptr;
+    }
+
+    slot_pointer     _first_slot;
+    slot_pointer     _last_slot;
+  };
+
+  std::vector<memory_chunk>   _mem_chunks;
+
+  slot_pointer                _next_free;
+  size_type                   _used_slots;
+
+  mutable std::mutex          _mtx_next;
 };
 
 } // namespace LIB_VERSION 
