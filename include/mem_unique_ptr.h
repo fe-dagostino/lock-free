@@ -118,22 +118,33 @@ public:
   }
 
   /***/
-  constexpr inline reference  operator*() const noexcept
+  constexpr inline reference        operator*() noexcept
   {
     static_assert(get() != pointer());
     return *get();
   }
 
   /***/
-  constexpr inline pointer operator->() const noexcept
+  constexpr inline const_reference  operator*() const noexcept
+  {
+    static_assert(get() != pointer());
+    return *get();
+  }  
+
+  /***/
+  constexpr inline pointer          operator->() noexcept
+  { return get(); }
+  
+  /***/
+  constexpr inline const_pointer    operator->() const noexcept
   { return get(); }
 
   /***/
-  constexpr inline pointer get() noexcept
+  constexpr inline pointer          get() noexcept
   { return _ptr; }
 
   /***/
-  constexpr inline const_pointer get() const noexcept
+  constexpr inline const_pointer    get() const noexcept
   { return _ptr; }
 
   /***/
