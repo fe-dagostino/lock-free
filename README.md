@@ -4,6 +4,7 @@ This repository will be populated with primarily with lock-free data structures,
 
 Current data structures implementations leverage C++20, so in order to build examples or to use such the following implementations a compiler that support at least C++20 is a pre-requirements. 
 
+---
 ### Lock-Free implementations
 
 Actually, the following lock-free data structures have been implemented:
@@ -27,6 +28,7 @@ This implementation can be used as:
 **Note**: FIFO is guaranteed on each single queue, but not between queues.
 To leverage maximum performance from this implementation, it is necessary to use preallocated `nodes`.
 
+---
 ## Other implementations
 
 ### arena_allocator
@@ -43,3 +45,9 @@ Let's see how it works and how it is possible to keep allocation and deallocatio
 In the following [Figure 1] there is representation for the *arena_allocator*; In this specific example we are considering `chuck_size = 5` since we want to illustrate the mechanism and 5 memory_slot are more than enough for this scope. 
 
 ![Figure 1](.resources/arena_allocator_initial.svg)
+
+As we can see in [Figure 1], there are different elements:
+* **MEMORY CHUNK**: in order to avoid massive call to `new` and `delete` there is a single allocation, one for each `chunks`, where the amount of memory is enough to store `chunk_size` items of type `data_t` plus some extra memory required to manage the structure. In fact, the drawback to have better performances, at least with this implementation, is that we need a pointer for each single `memory_slot`, so 32 bits or 64 bits depending on the CPU architecture. Moreover, we need to keep other two pointers, respectively `first` and `last`, used for integrity checks as well as for deallocating the memory once `arena_allocator` will be destroyed.
+* **MEMORY SLOT**: 
+
+* **next_free** : this 
