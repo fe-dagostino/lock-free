@@ -25,6 +25,9 @@
 #define LOCK_FREE_ARENA_ALLOCATOR_H
 
 #include <mutex>
+#include <semaphore>
+#include <future>
+#include <functional>
 #include <vector>
 #include <assert.h>
 
@@ -46,7 +49,8 @@ inline namespace LIB_VERSION {
  * 
 */
 template< typename data_t, typename data_size_t, 
-          data_size_t chunk_size = 1024, data_size_t initial_size = chunk_size, data_size_t size_limit = 0
+          data_size_t chunk_size = 1024, data_size_t initial_size = chunk_size, data_size_t size_limit = 0,
+          data_size_t alloc_threshold = (chunk_size / 10)
         > 
 requires std::is_unsigned_v<data_size_t> && (std::is_same_v<data_size_t,u_int32_t> || std::is_same_v<data_size_t,u_int64_t>)
          && ( ((sizeof(data_t) % alignof(std::max_align_t)) == 0 ) || ((alignof(std::max_align_t) % sizeof(data_t)) == 0 ) )
@@ -119,20 +123,38 @@ public:
 
   /***/
   constexpr inline arena_allocator() noexcept
-    : _next_free(nullptr), _used_slots(0)
+    : _next_free(nullptr), _max_length(0), _used_slots(0), 
+      _th_alloc(nullptr), _sem_th_alloc(0), _th_alloc_exit( false )
   {
     while ( max_length() < initial_size )
     {
       if ( add_mem_chuck() == false )
       { break; }
     }
+
+    if ( alloc_threshold > 0 )
+    {
+      _th_alloc = new std::thread( &arena_allocator<value_type,size_type, chunk_size, initial_size, size_limit, alloc_threshold>::async_add_mem_chuck, this );
+    }
   }
 
   /***/
   constexpr inline ~arena_allocator() noexcept
   {
+    if ( alloc_threshold > 0 )
+    {
+      _th_alloc_exit.store( true, std::memory_order_release );
+      _sem_th_alloc.release();
+    }
+
     // Release all chunks
     clear();
+
+    if ( alloc_threshold > 0 )
+    {
+      _th_alloc->join();
+      delete _th_alloc;
+    }
   }
 
   /**
@@ -172,10 +194,14 @@ public:
   constexpr inline size_type  max_length() const noexcept
   { 
     _mtx_next.lock();
-    size_type ret_val = chunk_size*_mem_chunks.size();
+    size_type ret_val = _max_length;
     _mtx_next.unlock();
     return ret_val; 
   }
+
+  /***/
+  constexpr inline size_type  unsafe_max_length() const noexcept
+  { return _max_length; }
 
   /**
    * @brief  Retrieve the size in bytes currently allocated.
@@ -214,6 +240,14 @@ public:
   constexpr inline pointer    allocate( Args&&... args ) noexcept
   { 
     _mtx_next.lock();
+
+      if ( alloc_threshold > 0 )
+      {
+        if ( unsafe_max_length() - unsafe_length() <= alloc_threshold ) 
+        { _sem_th_alloc.release(); }
+      }
+      else if ( _next_free == nullptr ) // && ( alloc_threshold == 0 ) second part is implicit.
+      { unsafe_add_mem_chuck(); } 
 
       slot_pointer pCurrSlot = _next_free;
       if ( pCurrSlot == nullptr )
@@ -283,6 +317,9 @@ public:
   template< typename... Args >
   constexpr inline pointer    unsafe_allocate( Args&&... args ) noexcept
   { 
+    if (( _next_free == nullptr ) && ( alloc_threshold == 0 ))
+    { unsafe_add_mem_chuck(); } 
+
     slot_pointer pCurrSlot = _next_free;
     if ( pCurrSlot == nullptr )
     {
@@ -369,8 +406,27 @@ public:
   }
 
 private:
+  constexpr inline void async_add_mem_chuck( ) noexcept
+  {
+    while ( _th_alloc_exit.load(std::memory_order_relaxed) == false )
+    {
+      _sem_th_alloc.acquire();
+
+      if ( _th_alloc_exit.load(std::memory_order_relaxed) == true  )
+        break;
+
+      if (( max_length() < size_limit ) || (size_limit == 0))
+      {
+        if ( add_mem_chuck( ) == false )
+        {
+          // Reached physical memory limit
+        }
+      }
+    }
+  }
+
   /***/
-  [[nodiscard]] constexpr inline bool add_mem_chuck() noexcept
+  constexpr inline bool add_mem_chuck() noexcept
   {
     memory_chunk _new_mem_chunck;
    
@@ -392,7 +448,7 @@ private:
     // Protect access to _next_free
     _mtx_next.lock();
 
-      if (_next_free != nullptr )
+      if ( _next_free != nullptr )
       {
         _new_mem_chunck._last_slot = _next_free;
       }
@@ -401,6 +457,8 @@ private:
       /////////////////////
       // Store chunck information in a vector.
       _mem_chunks.push_back(_new_mem_chunck);
+      // Update max_length
+      _max_length = chunk_size*_mem_chunks.size();
 
     // Release _next_free mutex
     _mtx_next.unlock();
@@ -408,6 +466,42 @@ private:
     return true;
   }
 
+  /***/
+  constexpr inline bool unsafe_add_mem_chuck() noexcept
+  {
+    memory_chunk _new_mem_chunck;
+   
+    _new_mem_chunck._first_slot = static_cast<slot_pointer>(std::aligned_alloc( alignof(std::max_align_t), memory_required_per_chunk ));
+    if ( _new_mem_chunck._first_slot == nullptr )
+    { return false; }
+
+    _new_mem_chunck._last_slot  = _new_mem_chunck._first_slot+(chunk_size-1);
+
+    // Iterate on overall slots in order to initialize the slots chain.
+    slot_pointer mem_curs = _new_mem_chunck._first_slot;
+    size_type    slots_nb = chunk_size; 
+    while ( slots_nb-- )
+    {
+      mem_curs = new(mem_curs) memory_slot((slots_nb>0)?(mem_curs+1):nullptr);
+      mem_curs++;
+    }
+
+    if ( _next_free != nullptr )
+    {
+      _new_mem_chunck._last_slot = _next_free;
+    }
+    _next_free  = _new_mem_chunck._first_slot; // next free item initialized with first item._
+
+    /////////////////////
+    // Store chunck information in a vector.
+    _mem_chunks.push_back(_new_mem_chunck);
+    // Update max_length
+    _max_length = chunk_size*_mem_chunks.size();
+
+    return true;
+  }
+
+  /***/
   constexpr inline void clear() noexcept
   {
     for ( auto& mc : _mem_chunks )
@@ -431,6 +525,11 @@ private:
       mc.reset();
     }
     _mem_chunks.clear();
+    
+    // Update max_length
+    _max_length = 0;
+    _used_slots = 0;
+    _next_free  = nullptr;
   }
 
 private:
@@ -452,9 +551,14 @@ private:
   std::vector<memory_chunk>   _mem_chunks;
 
   slot_pointer                _next_free;
+  size_type                   _max_length;
   size_type                   _used_slots;
 
   mutable std::mutex          _mtx_next;
+
+  std::thread*                _th_alloc;
+  std::binary_semaphore       _sem_th_alloc; 
+  std::atomic_bool            _th_alloc_exit;
 };
 
 } // namespace LIB_VERSION 

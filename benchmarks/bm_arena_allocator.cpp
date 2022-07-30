@@ -43,7 +43,7 @@ int main( int argc, const char* argv[] )
 
   const uint32_t c_pre_items = 1000000;
   
-  lock_free::arena_allocator<data_item_t,u_int32_t,c_pre_items>   allocator;
+  lock_free::arena_allocator<data_item_t,u_int32_t,c_pre_items,c_pre_items, 0, 0 >   allocator;
   
   data_item_t* arrItems[c_pre_items];
 
@@ -52,12 +52,12 @@ int main( int argc, const char* argv[] )
   bench
   .warmup(10)
   .epochs(10)
-  .epochIterations(20)
+  .epochIterations(50)
   .batch(c_pre_items)
   .run("Using new and delete", [&] {
 
         for ( u_int32_t i = 0; i < c_pre_items; ++i )
-          arrItems[i] = new data_item_t();
+          arrItems[i] = new data_item_t(i);
         for ( u_int32_t i = 0; i < c_pre_items; ++i )
           delete arrItems[i];
 
@@ -66,12 +66,12 @@ int main( int argc, const char* argv[] )
   bench
   .warmup(10)
   .epochs(10)
-  .epochIterations(20)
+  .epochIterations(50)
   .batch(c_pre_items)
   .run("Using arena_allocator", [&] {
 
         for ( u_int32_t i = 0; i < c_pre_items; ++i )
-          arrItems[i] = allocator.allocate(1523);
+          arrItems[i] = allocator.allocate(i);
         for ( u_int32_t i = 0; i < c_pre_items; ++i )
           allocator.deallocate(arrItems[i]);
         
@@ -80,14 +80,14 @@ int main( int argc, const char* argv[] )
   bench
   .warmup(10)
   .epochs(10)
-  .epochIterations(20)
+  .epochIterations(50)
   .batch(c_pre_items)
   .run("Using arena_allocator unsafe", [&] {
 
       for ( uint32_t repeat = 0; repeat < 1; ++repeat )
       {
         for ( u_int32_t i = 0; i < c_pre_items; ++i )
-          arrItems[i] = allocator.unsafe_allocate(1523);
+          arrItems[i] = allocator.unsafe_allocate(i);
         for ( u_int32_t i = 0; i < c_pre_items; ++i )
           allocator.unsafe_deallocate(arrItems[i]);
       }
