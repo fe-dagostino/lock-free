@@ -31,7 +31,6 @@ To leverage maximum performance from this implementation, it is necessary to use
 ---
 ## Other implementations
 
-* 
 * [arena_allocator](./pages/core/arena_allocator/README.md) : allocate() and deallocate() with a complexity of O(1).
 * [mem_unique_ptr]()
 
