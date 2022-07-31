@@ -11,7 +11,7 @@ Actually, the following lock-free data structures have been implemented:
 * ring-buffer 
 * multi-queue
 
-### ring-buffer
+### ring-buffer  **(*not finalize*)**
 
 This implementation leverage the std::array a well specified amount of `slots` where to hold our data.
 
@@ -19,7 +19,7 @@ This data structure can be shared between multiple threads in both reading and w
 
 This structure can be used in all circumstances where we don't care about the order of execution, this means that each thread can take a different time to process the single `data` unit. 
 
-### multi-queue
+### multi-queue  **(*not finalize*)**
 
 I guess there are ton of implementation for lock-free queue and this is one more.
 This implementation can be used as:
@@ -33,7 +33,7 @@ To leverage maximum performance from this implementation, it is necessary to use
 
 ### arena_allocator
 
-An arena_allocator implementation that keep both alloc() and dealloc() to a complexity of O(1).
+An arena_allocator implementation that keep both `allocate()` and `deallocate()` to a complexity of O(1).
  
 This arena_allocator is useful when :
  - in a program there is an extensive use of "new" and "delete" for a well-defined "data type";
@@ -122,6 +122,8 @@ The table show the difference between the classic `new` and `delete` compared wi
 
 In this specific benchmark we have only one thread allocating and deallocating memory, but when your program has many other calls to new and delete with different sizes, then running the program for hours will degrade `new` and `delete` performances when the arena_allocator keep performances constant in time.
 There is nothing magic since the arena allocator leverage the fact that it has all `memory_slot` with the same size, instead the `new` and `delete` should deal with generic requests and even with `tcache` optimization and/or `buddy` implementations the `new` operation will cost more than O(1) to search a new slot for the user.
+
+A complete use for the arena_allocator public interface can be found under examples directory [./examples/arena_allocator.cpp](./examples/arena_allocator.cpp), checking execution output and code will help to clarify how it works.
 
 Now, just some details related to the implementation. The aim was to create a ***lock-free*** arena_allocator, so except the initial allocation to reserve memory ( mmap, alloc, malloc ...) the design was *lock-free*, and this arena_allocator was in the `lock_free` `namespace`, but unfortunately `benchmarking` the *lock-free* implementation the results was between **2x** and **3x** slower than `new` and `delete`, so having an arena_allocator with such bad performances was unuseful, and I didn't see any practical application for that. After different tries to optimize usage of `fences` and to reduce the number of `exchanges` I ended moving the arena allocator inside a new `namespace` named `core` and using a `mutex` to synchronize access.
 
