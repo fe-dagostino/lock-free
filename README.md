@@ -56,24 +56,24 @@ Now lets see a minimalist code for `allocate()` and `deallocate()`:
   data_t* arena_allocator::allocate( ) 
   { 
     memory_slot* pCurrSlot = _next_free;
-    if ( pCurrSlot == nullptr )               // There are no free slot available, this can occur in
-      return nullptr;                         // if our arena_allocator have been limited to a maximum 
-                                              // amount of memory_slot (size_limit template parameter)
-                                              // or in case the system  run out-of-memory.
+    if ( pCurrSlot == nullptr )       // There are no free slot available, this can occur in
+      return nullptr;                 // if our arena_allocator have been limited to a maximum 
+                                      // amount of memory_slot (size_limit template parameter)
+                                      // or in case the system  run out-of-memory.
 
     
     // When we still have free memory_slot then the following 3 steps are done.
     
-    _next_free = pCurrSlot->next();           // STEP 1: set _next_free to the next() in the chain.
-                                              //         with reference to Figure 1, if _next_free was
-                                              //         referring to 'Slot_1', then we move it to 
-                                              //         Slot_1->next then means 'Slot_2'
+    _next_free = pCurrSlot->next();   // STEP 1: set _next_free to the next() in the chain.
+                                      //         with reference to Figure 1, if _next_free was
+                                      //         referring to 'Slot_1', then we move it to 
+                                      //         Slot_1->next then means 'Slot_2'
     
-    pCurrSlot->_next = nullptr;               // STEP 2: set next pointer to nullptr since this 
-                                              //         memory_slot is "in use" and 'ownership'
-                                              //         is released to the user.     
+    pCurrSlot->_next = nullptr;       // STEP 2: set next pointer to nullptr since this 
+                                      //         memory_slot is "in use" and 'ownership'
+                                      //         is released to the user.     
     
-    return pCurrSlot->prt();                  // STEP 3: release a pointer to data_t to the caller
+    return pCurrSlot->prt();          // STEP 3: release a pointer to data_t to the caller
   }
 ```
 
@@ -88,17 +88,17 @@ The above method allocate() basically performs:
 
     slot_pointer  pSlot = memory_slot::slot_from_user_data(userdata);
 
-    userdata->~data_t();                      // invoke data_t() destructor like a call to delete()
+    userdata->~data_t();              // invoke data_t() destructor like a call to delete()
 
-    pSlot->_next = _next_free;                // STEP 1: setting _next to _next_free, so following
-                                              //         the status after allocate() above, we have
-                                              //         pSlot = Slot_1, pSlot->_next = nullptr and
-                                              //         and _next_free = Slot_2; then after this 
-                                              //         assignment we will have:
-                                              //           pSlot->next = Slot_2  
+    pSlot->_next = _next_free;        // STEP 1: setting _next to _next_free, so following
+                                      //         the status after allocate() above, we have
+                                      //         pSlot = Slot_1, pSlot->_next = nullptr and
+                                      //         and _next_free = Slot_2; then after this 
+                                      //         assignment we will have:
+                                      //           pSlot->next = Slot_2  
 
-    _next_free = pSlot;                       // STEP 2: _next_free = Slot_1, so in this specific
-                                              //         use case we roll-back to the original status.
+    _next_free = pSlot;               // STEP 2: _next_free = Slot_1, so in this specific
+                                      //         use case we roll-back to the original status.
 
   }
 ```
