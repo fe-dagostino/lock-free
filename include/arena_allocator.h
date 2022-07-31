@@ -38,7 +38,6 @@ namespace lock_free {
 
 inline namespace LIB_VERSION {
 
-
 /***
  * An arena_allocator implementation that keep both alloc() and dealloc() to a complexity of O(1).
  * 
@@ -285,7 +284,7 @@ public:
 
     slot_pointer  pSlot = memory_slot::slot_from_user_data(userdata);
 
-    pSlot->prt()->~value_type();
+    userdata->~value_type();
 
     _mtx_next.lock();
 
@@ -356,7 +355,7 @@ public:
 
     slot_pointer  pSlot = memory_slot::slot_from_user_data(userdata);
 
-    pSlot->prt()->~value_type();
+    userdata->~value_type();
 
     pSlot->set_free( _next_free );
     _next_free = pSlot;
