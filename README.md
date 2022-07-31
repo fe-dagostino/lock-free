@@ -77,7 +77,7 @@ Now lets see a minimalist code for `allocate()` and `deallocate()`:
   }
 ```
 
-The above method allocate() basically performs:
+The above method `allocate()` basically performs:
 * 1 x initial check
 * 2 x assignment respectively at STEP 1 and STEP 2
 
@@ -102,15 +102,15 @@ The above method allocate() basically performs:
 
   }
 ```
-The above method allocate() basically performs:
-* 1 x subtraction performed by memory_slot::slot_from_user_data()
+The above method `deallocate()` basically performs:
+* 1 x subtraction done by memory_slot::slot_from_user_data()
 * 2 x assignment respectively at STEP 1 and STEP 2
 
 In the above example, there is no mention for `constructor` and `destructor` time, since this are `data_t` dependent and then in charge of the user in any case. Moreover, both constructor and destructor are executed out of any synchronization mechanism, so do not have impact on arena_allocator performances in a concurrent environment.
 
 The above function are simplified, since there is no syncrhonization for the full implementation, please refer to [arena_allocator.h](./include/arena_allocator.h) where there are two different methods for both `allocate()` and `deallocate()`, one version is thread safe the other one is unsafe, then synch is in charge to the user. 
 
-Here some benckmark obtained running [bm_arena_allocator.cpp](./benchmarks/bm_arena_allocator.cpp).
+Here some benckmark obtained running [bm_arena_allocator.cpp](./benchmarks/bm_arena_allocator.cpp). Compiled with `gcc 12.0.1 20220319`.
 
 |               ns/op |                op/s |    err% |          ins/op |          cyc/op |    IPC |         bra/op |   miss% |     total | benchmark
 |--------------------:|--------------------:|--------:|----------------:|----------------:|-------:|---------------:|--------:|----------:|:----------
@@ -123,5 +123,7 @@ The table show the difference between the classic `new` and `delete` compared wi
 In this specific benchmark we have only one thread allocating and deallocating memory, but when your program has many other calls to new and delete with different sizes, then running the program for hours will degrade `new` and `delete` performances when the arena_allocator keep performances constant in time.
 There is nothing magic since the arena allocator leverage the fact that it has all `memory_slot` with the same size, instead the `new` and `delete` should deal with generic requests and even with `tcache` optimization and/or `buddy` implementations the `new` operation will cost more than O(1) to search a new slot for the user.
 
+Now, just some details related to the implementation. The aim was to create a ***lock-free*** arena_allocator, so except the initial allocation to reserve memory ( mmap, alloc, malloc ...) the design was *lock-free*, and this arena_allocator was in the `lock_free` `namespace`, but unfortunately `benchmarking` the *lock-free* implementation the results was between **2x** and **3x** slower than `new` and `delete`, so having an arena_allocator with such bad performances was unuseful, and I didn't see any practical application for that. After different tries to optimize usage of `fences` and to reduce the number of `exchanges` I ended moving the arena allocator inside a new `namespace` named `core` and using a `mutex` to synchronize access.
 
+By the way with this experience I discover that `mutex` as implemented by GCC (gcc version 12.0.1) are performing better than other synchronization mechanism, and I did some concurrent test up to 32 threads. Same check performed on Clang (clang version 14.0.0) are still better than lock-free, but less performing than gcc, so as soon I will have time for sure I will check the code produced by both in order to understand this difference. This is out of the scope for the arena_allocator, but I liked to share since for many person can be an in important information.
 
