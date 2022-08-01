@@ -21,8 +21,8 @@
  *
  *************************************************************************************************/
 
-#ifndef LOCK_FREE_ARENA_ALLOCATOR_H
-#define LOCK_FREE_ARENA_ALLOCATOR_H
+#ifndef CORE_ARENA_ALLOCATOR_H
+#define CORE_ARENA_ALLOCATOR_H
 
 #include <mutex>
 #include <semaphore>
@@ -34,7 +34,7 @@
 #include "memory_address.h"
 
 
-namespace lock_free {
+namespace core {
 
 inline namespace LIB_VERSION {
 
@@ -564,4 +564,4 @@ private:
 
 }
 
-#endif //LOCK_FREE_ARENA_ALLOCATOR_H
+#endif //CORE_ARENA_ALLOCATOR_H

@@ -43,7 +43,7 @@ int main( int argc, const char* argv[] )
 
   const uint32_t c_pre_items = 1000000;
   
-  lock_free::arena_allocator<data_item_t,u_int32_t,c_pre_items,c_pre_items, 0, 0 >   allocator;
+  core::arena_allocator<data_item_t,u_int32_t,c_pre_items,c_pre_items, 0, 0 >   allocator;
   
   data_item_t* arrItems[c_pre_items];
 

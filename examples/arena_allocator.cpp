@@ -40,7 +40,7 @@ int main( int argc, const char* argv[] )
   const uint32_t c_pre_items = 10;
 
   std::cout << "Start initialization: arena_allocator" << std::endl;
-  lock_free::arena_allocator<
+  core::arena_allocator<
                               data_item_t,          // user data type
                               u_int32_t,            // data type for all counters
                               c_pre_items,          // chunk_size, how many data_item_t in a single chunck of memory.
