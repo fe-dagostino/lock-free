@@ -391,7 +391,7 @@ public:
   {
     std::lock_guard mtx(_mtx_next);
     
-    return usafe_is_valid( userdata );
+    return unsafe_is_valid( userdata );
   }
 
   /**
