@@ -10,12 +10,23 @@ LINK_DIRECTORIES( ${LIB_BINARY_DIR} )
 
 include(FetchContent)
 
+
+# Download google benchmark
+#FetchContent_Declare(
+#    benchmark
+#    GIT_REPOSITORY https://github.com/google/benchmark.git
+#    GIT_TAG v1.7.0
+#    GIT_SHALLOW TRUE)
+
+#FetchContent_MakeAvailable(benchmark)
+
 # Download nanobench
 FetchContent_Declare(
     nanobench
     GIT_REPOSITORY https://github.com/martinus/nanobench.git
-    GIT_TAG v4.1.0
+    GIT_TAG v4.3.7
     GIT_SHALLOW TRUE)
+
 
 FetchContent_MakeAvailable(nanobench)
 
@@ -30,9 +41,11 @@ if ( LF_ENABLE_CPPCHECK )
 endif()
 
 add_executable( bm_arena_allocator              bm_arena_allocator.cpp           )
+#add_executable( bm_mt_arena_allocator           bm_mt_arena_allocator.cpp        )
 #add_executable( bm_arena_allocator_resize       bm_arena_allocator_resize.cpp    )
 #add_executable( bm_queue                        bm_queue.cpp                     )
 
 target_link_libraries( bm_arena_allocator                ${DEFAULT_LIBRARIES}   )
+#target_link_libraries( bm_mt_arena_allocator             ${DEFAULT_LIBRARIES}   )
 #target_link_libraries( bm_arena_allocator_resize         ${DEFAULT_LIBRARIES}   )
 #target_link_libraries( bm_queue                          ${DEFAULT_LIBRARIES}   )
