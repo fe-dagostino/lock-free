@@ -79,7 +79,7 @@ The above method `deallocate()` basically performs:
 
 In the above example, there is no mention for `constructor` and `destructor` time, since this are `data_t` dependent and then in charge of the user in any case. Moreover, both constructor and destructor are executed out of any synchronization mechanism, so do not have impact on arena_allocator performances in a concurrent environment.
 
-The above function are simplified, since there is no syncrhonization for the full implementation, please refer to [arena_allocator.h](../../../include/arena_allocator.h) where there are two different methods for both `allocate()` and `deallocate()`, one version is thread safe the other one is unsafe, then synch is in charge to the user. 
+The above function are simplified, since there is no syncrhonization for the full implementation, please refer to [arena_allocator.h](../../../include/core/arena_allocator.h) where there are two different methods for both `allocate()` and `deallocate()`, one version is thread safe the other one is unsafe, then synch is in charge to the user. 
 
 Here some benckmark obtained running [bm_arena_allocator.cpp](../../../benchmarks/bm_arena_allocator.cpp). Compiled with `gcc 12.0.1 20220319`.
 
