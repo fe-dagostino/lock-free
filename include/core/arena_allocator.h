@@ -282,9 +282,9 @@ public:
   {
     assert( userdata != nullptr );
 
-    slot_pointer  pSlot = memory_slot::slot_from_user_data(userdata);
-
     userdata->~value_type();
+
+    slot_pointer  pSlot = memory_slot::slot_from_user_data(userdata);
 
     _mtx_next.lock();
 
@@ -353,9 +353,9 @@ public:
   {
     assert( userdata != nullptr );
 
-    slot_pointer  pSlot = memory_slot::slot_from_user_data(userdata);
-
     userdata->~value_type();
+
+    slot_pointer  pSlot = memory_slot::slot_from_user_data(userdata);
 
     pSlot->set_free( _next_free );
     _next_free = pSlot;
