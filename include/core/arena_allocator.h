@@ -122,7 +122,7 @@ public:
 
   /***/
   constexpr inline arena_allocator() noexcept
-    : _next_free(nullptr), _max_length(0), _used_slots(0), 
+    : _next_free(nullptr), _max_length(0), _used_slots(0), _capacity(0),
       _th_alloc(nullptr), _sem_th_alloc(0), _th_alloc_exit( false )
   {
     while ( max_length() < initial_size )
@@ -210,7 +210,7 @@ public:
   constexpr inline size_type  capacity() const noexcept
   { 
     _mtx_next.lock();
-    size_type ret_val = memory_required_per_chunk*_mem_chunks.size();
+    size_type ret_val = _capacity;
     _mtx_next.unlock();
     return ret_val;     
   }
@@ -222,7 +222,7 @@ public:
   { return std::numeric_limits<size_type>::max() / memory_slot_size; }
   
   /**
-   * @brief Allocate memory for value_type() object and invoke
+   * @brief Allocate memory for data_t() object and invoke
    *        constructur accordingly with parameters.
    * 
    *        Note: this function is thread safe, if you are in single
@@ -231,9 +231,17 @@ public:
    * @param args    list of arguments can be also empty, in such 
    *                case the default constructor will be invoked.
    *                When specified one or more arguments they should 
-   *                match with a constructor for value_type() or 
+   *                match with a constructor for data_t() or 
    *                an error will be generated ar compile-time.
-   * @return value_type* to constructed object.
+   * @return data_t* to constructed object. Function may return nullptr in
+   *         the following circumstances:
+   *         1) not enough memory to allocate a new memory_chunk
+   *         2) not available memory_slot since the max_size has been 
+   *            limited using size_limit template parameter.
+   *         3) service thread is allocating a new memory_chunk or
+   *            a different working thread is allocating a memory_cunck,
+   *            this is behaviour is regulated bu alloc_threshold 
+   *            template parameter. 
    */
   template< typename... Args > 
   constexpr inline pointer    allocate( Args&&... args ) noexcept
@@ -265,7 +273,7 @@ public:
   }
 
   /**
-   * @brief Deallocate memory for @param userdata pointer and invoke ~value_type().
+   * @brief Deallocate memory for @param userdata pointer and invoke ~data_t().
    * 
    *        Note: this function is thread safe, if you are in single
    *              thread context evaluate to use unsafe_allocate() instead.
@@ -296,7 +304,7 @@ public:
   }
 
   /**
-   * @brief Allocate memory for value_type() object and invoke
+   * @brief Allocate memory for data_t() object and invoke
    *        constructur accordingly with parameters.
    * 
    *        Note: this function is NOT thread safe, so it must be
@@ -304,14 +312,22 @@ public:
    *              if synch occurs in the calling class. 
    * 
    *        Note: unsafe_ can be up to 40% faster if compared to thread safe method.
-   *              
-   * 
+   *     
    * @param args    list of arguments can be also empty, in such 
    *                case the default constructor will be invoked.
    *                When specified one or more arguments they should 
-   *                match with a constructor for value_type() or 
+   *                match with a constructor for data_t() or 
    *                an error will be generated ar compile-time.
-   * @return value_type* to constructed object.
+   * 
+   * @return data_t* to constructed object. Function may return nullptr in
+   *         the following circumstances:
+   *         1) not enough memory to allocate a new memory_chunk
+   *         2) not available memory_slot since the max_size has been 
+   *            limited using size_limit template parameter.
+   *         3) service thread is allocating a new memory_chunk or
+   *            a different working thread is allocating a memory_cunck,
+   *            this is behaviour is regulated bu alloc_threshold 
+   *            template parameter. 
    */
   template< typename... Args >
   constexpr inline pointer    unsafe_allocate( Args&&... args ) noexcept
@@ -358,7 +374,9 @@ public:
     slot_pointer  pSlot = memory_slot::slot_from_user_data(userdata);
 
     pSlot->set_free( _next_free );
+
     _next_free = pSlot;
+
     --_used_slots;
   }
 
@@ -383,7 +401,7 @@ public:
    * @return true    if memory address is in the range managed by arena_allocator instance
    * @return false   if memory address is do not fit in any allocated memory chunk
    */
-  [[nodiscard]] constexpr inline bool usafe_is_valid( pointer userdata ) const
+  [[nodiscard]] constexpr inline bool unsafe_is_valid( pointer userdata ) const
   {
     if ( userdata == nullptr )
       return false;
@@ -405,6 +423,7 @@ public:
   }
 
 private:
+  /***/
   constexpr inline void async_add_mem_chuck( ) noexcept
   {
     while ( _th_alloc_exit.load(std::memory_order_relaxed) == false )
@@ -447,17 +466,18 @@ private:
     // Protect access to _next_free
     _mtx_next.lock();
 
-      if ( _next_free != nullptr )
-      {
-        _new_mem_chunck._last_slot = _next_free;
-      }
+      _new_mem_chunck._last_slot->set_free( _next_free );
+
       _next_free  = _new_mem_chunck._first_slot; // next free item initialized with first item._
 
       /////////////////////
       // Store chunck information in a vector.
       _mem_chunks.push_back(_new_mem_chunck);
+
       // Update max_length
       _max_length = chunk_size*_mem_chunks.size();
+      // Update capacity
+      _capacity   = memory_required_per_chunk*_mem_chunks.size();      
 
     // Release _next_free mutex
     _mtx_next.unlock();
@@ -485,17 +505,18 @@ private:
       mem_curs++;
     }
 
-    if ( _next_free != nullptr )
-    {
-      _new_mem_chunck._last_slot = _next_free;
-    }
+    _new_mem_chunck._last_slot->set_free( _next_free );
+
     _next_free  = _new_mem_chunck._first_slot; // next free item initialized with first item._
 
     /////////////////////
     // Store chunck information in a vector.
     _mem_chunks.push_back(_new_mem_chunck);
+
     // Update max_length
     _max_length = chunk_size*_mem_chunks.size();
+    // Update capacity
+    _capacity   = memory_required_per_chunk*_mem_chunks.size();      
 
     return true;
   }
@@ -528,10 +549,31 @@ private:
     // Update max_length
     _max_length = 0;
     _used_slots = 0;
+    _capacity   = 0;      
     _next_free  = nullptr;
   }
 
+  /***/
+  void print_internal_status()
+  { 
+    std::cout << "-----------------BEGIN-----------------" << std::endl;
+    std::cout << "_next_free  = " << _next_free  << std::endl;
+    std::cout << "_max_length = " << _max_length << std::endl;
+    std::cout << "_used_slots = " << _used_slots << std::endl;
+    std::cout << "_capacity   = " << _capacity   << std::endl;
+    
+    for ( size_type ndx = 0; ndx < _mem_chunks.size(); ++ndx )
+    {
+      memory_chunk& mc = _mem_chunks.at(ndx);
+
+      std::cout << "[" << ndx << "] _first_slot = " << mc._first_slot << std::endl;
+      std::cout << "[" << ndx << "] _last_slot  = " << mc._last_slot  << std::endl;
+    }
+    std::cout << "------------------END------------------" << std::endl;
+  }
+
 private:
+  /***/
   struct memory_chunk {
     constexpr inline memory_chunk() noexcept
       : _first_slot(nullptr), _last_slot(nullptr)
@@ -552,6 +594,7 @@ private:
   slot_pointer                _next_free;
   size_type                   _max_length;
   size_type                   _used_slots;
+  size_type                   _capacity;
 
   mutable std::mutex          _mtx_next;
 
