@@ -122,12 +122,13 @@ public:
 
   /***/
   constexpr inline arena_allocator() noexcept
-    : _next_free(nullptr), _max_length(0), _used_slots(0), _capacity(0),
+    : _next_free(nullptr), _max_length(0), _free_slots(0), _capacity(0),
       _th_alloc(nullptr), _sem_th_alloc(0), _th_alloc_exit( false )
   {
     static_assert(decltype(_next_free )::is_always_lock_free);
     static_assert(decltype(_max_length)::is_always_lock_free);
-    static_assert(decltype(_used_slots)::is_always_lock_free);
+    static_assert(decltype(_free_slots)::is_always_lock_free);
+    static_assert(decltype(_capacity  )::is_always_lock_free);
 
     while ( max_length() < initial_size )
     {
@@ -174,7 +175,7 @@ public:
    * @return current items in the data buffer. 
    */
   constexpr inline size_type  length() const noexcept
-  { return _used_slots.load( std::memory_order_relaxed ); }
+  { return _max_length.load( std::memory_order_relaxed )-_free_slots.load( std::memory_order_relaxed ); }
 
   /**
    * @brief Return max lenght for this arena_allocator.
@@ -225,7 +226,7 @@ public:
   { 
     if ( alloc_threshold > 0 )
     {
-      if ( max_length() - length() <= alloc_threshold ) 
+      if ( _free_slots.load( std::memory_order_relaxed ) <= alloc_threshold ) 
       { _sem_th_alloc.release(); }
     }
     else if ( _next_free.load( std::memory_order_relaxed ) == nullptr ) // && ( alloc_threshold == 0 ) second part is implicit.
@@ -235,15 +236,16 @@ public:
     if ( pCurrSlot == nullptr )
       return nullptr;
 
+   
     do{
-    } while ( (pCurrSlot) && !_next_free.compare_exchange_weak( pCurrSlot, pCurrSlot->next(), std::memory_order_release, std::memory_order_relaxed ) );
+    } while ( (pCurrSlot) && !_next_free.compare_exchange_weak( pCurrSlot, pCurrSlot->next()/*, std::memory_order_release, std::memory_order_relaxed*/ ) );
 
     if ( pCurrSlot == nullptr )
       return nullptr;
 
     pCurrSlot->set_in_use();
 
-    _used_slots.fetch_add(1, std::memory_order_relaxed);
+    _free_slots.fetch_sub(1, std::memory_order_relaxed);
     
     return new(pCurrSlot->prt()) value_type( std::forward<Args>(args)... );
   }
@@ -271,12 +273,11 @@ public:
     slot_pointer  pSlot     = memory_slot::slot_from_user_data(userdata);
     slot_pointer  pCurrNext = _next_free.load( std::memory_order_consume );
 
-    do
-    {
+    do{
       pSlot->set_free( pCurrNext );
-    } while ( !_next_free.compare_exchange_weak( pCurrNext, pSlot, std::memory_order_release, std::memory_order_relaxed ) );
+    } while ( !_next_free.compare_exchange_weak( pCurrNext, pSlot/*, std::memory_order_release, std::memory_order_relaxed*/ ) );
     
-    _used_slots.fetch_sub(1, std::memory_order_relaxed );
+    _free_slots.fetch_add(1, std::memory_order_relaxed );
   }
 
   /**
@@ -319,7 +320,7 @@ public:
 
     pCurrSlot->set_in_use();
 
-    _used_slots.fetch_add( 1, std::memory_order_relaxed );
+    _free_slots.fetch_sub( 1, std::memory_order_relaxed );
 
     return new(pCurrSlot->prt()) value_type( std::forward<Args>(args)... );
   }
@@ -353,7 +354,7 @@ public:
     
     _next_free.exchange( pSlot, std::memory_order_relaxed );
 
-    _used_slots.fetch_sub( 1, std::memory_order_relaxed );
+    _free_slots.fetch_add( 1, std::memory_order_relaxed );
   }
 
   /**
@@ -470,9 +471,11 @@ private:
         _mem_chunks.push_back(_new_mem_chunck);
         
         // Update max_length
-        _max_length.store( chunk_size*_mem_chunks.size(), std::memory_order_release );
+        _max_length.store( chunk_size*_mem_chunks.size(), std::memory_order_relaxed );
+        _free_slots.fetch_add(chunk_size, std::memory_order_relaxed);
+
         // Update capacity
-        _capacity.store( memory_required_per_chunk*_mem_chunks.size(), std::memory_order_release );
+        _capacity.store( memory_required_per_chunk*_mem_chunks.size(), std::memory_order_relaxed );
 
     // Release _next_free mutex
     _mtx_mem_chunks.unlock();
@@ -509,9 +512,11 @@ private:
     _mem_chunks.push_back(_new_mem_chunck);
 
     // Update max_length
-    _max_length.store( chunk_size*_mem_chunks.size(), std::memory_order_release );
+    _max_length.store( chunk_size*_mem_chunks.size(), std::memory_order_relaxed );
+    _free_slots.fetch_add(chunk_size, std::memory_order_relaxed);
+
     // Update capacity
-    _capacity.store( memory_required_per_chunk*_mem_chunks.size(), std::memory_order_release );
+    _capacity.store( memory_required_per_chunk*_mem_chunks.size(), std::memory_order_relaxed );
 
     return true;
   }
@@ -543,7 +548,7 @@ private:
     
     // Update max_length
     _max_length.store(       0, std::memory_order_relaxed );
-    _used_slots.store(       0, std::memory_order_relaxed );
+    _free_slots.store(       0, std::memory_order_relaxed );
     _capacity.store  (       0, std::memory_order_relaxed );
     _next_free.store ( nullptr, std::memory_order_relaxed );  
   }
@@ -554,7 +559,7 @@ private:
     std::cout << "-----------------BEGIN-----------------" << std::endl;
     std::cout << "_next_free  = " << _next_free.load()  << std::endl;
     std::cout << "_max_length = " << _max_length.load() << std::endl;
-    std::cout << "_used_slots = " << _used_slots.load() << std::endl;
+    std::cout << "_free_slots = " << _free_slots.load() << std::endl;
     std::cout << "_capacity   = " << _capacity.load()   << std::endl;
     
     for ( size_type ndx = 0; ndx < _mem_chunks.size(); ++ndx )
@@ -588,7 +593,7 @@ private:
 
   std::atomic<slot_pointer>   _next_free;
   std::atomic<size_type>      _max_length;
-  std::atomic<size_type>      _used_slots;
+  std::atomic<size_type>      _free_slots;
   std::atomic<size_type>      _capacity;
 
   std::mutex                  _mtx_mem_chunks;
