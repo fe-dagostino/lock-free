@@ -122,7 +122,7 @@ public:
 
   /***/
   constexpr inline arena_allocator() noexcept
-    : _next_free(nullptr), _max_length(0), _used_slots(0), _capacity(0),
+    : _next_free(nullptr), _max_length(0), _free_slots(0), _capacity(0),
       _th_alloc(nullptr), _sem_th_alloc(0), _th_alloc_exit( false )
   {
     while ( max_length() < initial_size )
@@ -172,7 +172,7 @@ public:
   constexpr inline size_type  length() const noexcept
   { 
     _mtx_next.lock();
-    size_type ret_val = _used_slots;
+    size_type ret_val = (_max_length-_free_slots);
     _mtx_next.unlock();
     return ret_val; 
   }
@@ -183,7 +183,7 @@ public:
    * @return current items in the data buffer. 
    */
   constexpr inline size_type  unsafe_length() const noexcept
-  { return _used_slots; }
+  { return (_max_length-_free_slots); }
 
   /**
    * @brief Return max lenght for this arena_allocator.
@@ -246,11 +246,12 @@ public:
   template< typename... Args > 
   constexpr inline pointer    allocate( Args&&... args ) noexcept
   { 
-    _mtx_next.lock();
+    do{
+    } while ( !_mtx_next.try_lock() );
 
-      if ( alloc_threshold > 0 )
+      if ( alloc_threshold > 0 ) 
       {
-        if ( unsafe_max_length() - unsafe_length() <= alloc_threshold ) 
+        if ( _free_slots <= alloc_threshold ) 
         { _sem_th_alloc.release(); }
       }
       else if ( _next_free == nullptr ) // && ( alloc_threshold == 0 ) second part is implicit.
@@ -264,10 +265,11 @@ public:
       }
 
       _next_free = pCurrSlot->next();
-      pCurrSlot->set_in_use();
-      ++_used_slots;
+      --_free_slots;
     
     _mtx_next.unlock();
+    
+    pCurrSlot->set_in_use();
 
     return new(pCurrSlot->prt()) value_type( std::forward<Args>(args)... );
   }
@@ -294,11 +296,12 @@ public:
 
     slot_pointer  pSlot = memory_slot::slot_from_user_data(userdata);
 
-    _mtx_next.lock();
+    do{
+    } while ( !_mtx_next.try_lock() );
 
       pSlot->set_free( _next_free );
       _next_free = pSlot;
-      --_used_slots;
+      ++_free_slots;
 
     _mtx_next.unlock();
   }
@@ -343,7 +346,7 @@ public:
 
     _next_free = pCurrSlot->next();
     pCurrSlot->set_in_use();
-    ++_used_slots;
+    --_free_slots;
 
     return new(pCurrSlot->prt()) value_type( std::forward<Args>(args)... );
   }
@@ -377,7 +380,7 @@ public:
 
     _next_free = pSlot;
 
-    --_used_slots;
+    ++_free_slots;
   }
 
   /**
@@ -464,7 +467,8 @@ private:
     }
 
     // Protect access to _next_free
-    _mtx_next.lock();
+    do{
+    } while ( !_mtx_next.try_lock() );
 
       _new_mem_chunck._last_slot->set_free( _next_free );
 
@@ -475,9 +479,11 @@ private:
       _mem_chunks.push_back(_new_mem_chunck);
 
       // Update max_length
-      _max_length = chunk_size*_mem_chunks.size();
+      _max_length  = chunk_size*_mem_chunks.size();
+      _free_slots += chunk_size;
+
       // Update capacity
-      _capacity   = memory_required_per_chunk*_mem_chunks.size();      
+      _capacity    = memory_required_per_chunk*_mem_chunks.size();      
 
     // Release _next_free mutex
     _mtx_next.unlock();
@@ -514,9 +520,11 @@ private:
     _mem_chunks.push_back(_new_mem_chunck);
 
     // Update max_length
-    _max_length = chunk_size*_mem_chunks.size();
+    _max_length  = chunk_size*_mem_chunks.size();
+    _free_slots += chunk_size; 
+
     // Update capacity
-    _capacity   = memory_required_per_chunk*_mem_chunks.size();      
+    _capacity    = memory_required_per_chunk*_mem_chunks.size();      
 
     return true;
   }
@@ -548,7 +556,7 @@ private:
     
     // Update max_length
     _max_length = 0;
-    _used_slots = 0;
+    _free_slots = 0;
     _capacity   = 0;      
     _next_free  = nullptr;
   }
@@ -559,7 +567,7 @@ private:
     std::cout << "-----------------BEGIN-----------------" << std::endl;
     std::cout << "_next_free  = " << _next_free  << std::endl;
     std::cout << "_max_length = " << _max_length << std::endl;
-    std::cout << "_used_slots = " << _used_slots << std::endl;
+    std::cout << "_free_slots = " << _free_slots << std::endl;
     std::cout << "_capacity   = " << _capacity   << std::endl;
     
     for ( size_type ndx = 0; ndx < _mem_chunks.size(); ++ndx )
@@ -593,7 +601,7 @@ private:
 
   slot_pointer                _next_free;
   size_type                   _max_length;
-  size_type                   _used_slots;
+  size_type                   _free_slots;
   size_type                   _capacity;
 
   mutable std::mutex          _mtx_next;
