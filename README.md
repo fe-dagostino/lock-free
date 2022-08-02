@@ -5,9 +5,10 @@ This repository will be populated with primarily with lock-free data structures,
 Current data structures implementations leverage C++20, so in order to build examples or to use such the following implementations a compiler that support at least C++20 is a pre-requirements. 
 
 ---
-## Lock-Free implementations
+## Lock-Free implementations - namespece `lock_free`
 
 Actually, the following lock-free data structures have been implemented:
+* [arena_allocator](./pages/common/arena_allocator/README.md) (*lock-free version*) : **`allocate()`** and **`deallocate()`** with a complexity of **`O(1)`**.
 * ring-buffer 
 * multi-queue
 
@@ -29,9 +30,9 @@ This implementation can be used as:
 To leverage maximum performance from this implementation, it is necessary to use preallocated `nodes`.
 
 ---
-## Other implementations
+## Other implementations - namespece `core`
 
-* [arena_allocator](./pages/core/arena_allocator/README.md) : **`allocate()`** and **`deallocate()`** with a complexity of **`O(1)`**.
+* [arena_allocator](./pages/common/arena_allocator/README.md) (*mutex version*): **`allocate()`** and **`deallocate()`** with a complexity of **`O(1)`**.
 * [mem_unique_ptr]()
 
 
