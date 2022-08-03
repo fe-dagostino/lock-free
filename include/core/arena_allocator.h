@@ -24,15 +24,12 @@
 #ifndef CORE_ARENA_ALLOCATOR_H
 #define CORE_ARENA_ALLOCATOR_H
 
-#include <mutex>
-#include <semaphore>
-#include <future>
-#include <functional>
+#include <thread>
 #include <vector>
 #include <assert.h>
 
+#include "mutex.h"
 #include "memory_address.h"
-
 
 namespace core {
 
@@ -249,16 +246,16 @@ public:
     do{
     } while ( !_mtx_next.try_lock() );
 
-      if ( alloc_threshold > 0 ) 
+      if ( alloc_threshold > 0 ) [[likely]]
       {
         if ( _free_slots <= alloc_threshold ) 
         { _sem_th_alloc.release(); }
       }
-      else if ( _next_free == nullptr ) // && ( alloc_threshold == 0 ) second part is implicit.
+      else if ( _next_free == nullptr ) [[unlikely]] // && ( alloc_threshold == 0 ) second part is implicit.
       { unsafe_add_mem_chuck(); } 
 
       slot_pointer pCurrSlot = _next_free;
-      if ( pCurrSlot == nullptr )
+      if ( pCurrSlot == nullptr ) [[unlikely]]
       {
         _mtx_next.unlock();
         return nullptr;
@@ -340,9 +337,7 @@ public:
 
     slot_pointer pCurrSlot = _next_free;
     if ( pCurrSlot == nullptr )
-    {
-      return nullptr;
-    }
+      nullptr;
 
     _next_free = pCurrSlot->next();
     pCurrSlot->set_in_use();
@@ -604,7 +599,7 @@ private:
   size_type                   _free_slots;
   size_type                   _capacity;
 
-  mutable std::mutex          _mtx_next;
+  mutable mutex               _mtx_next;
 
   std::thread*                _th_alloc;
   std::binary_semaphore       _sem_th_alloc; 
