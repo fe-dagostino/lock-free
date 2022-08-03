@@ -337,7 +337,7 @@ public:
 
     slot_pointer pCurrSlot = _next_free;
     if ( pCurrSlot == nullptr )
-      nullptr;
+      return nullptr;
 
     _next_free = pCurrSlot->next();
     pCurrSlot->set_in_use();
