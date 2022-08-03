@@ -25,14 +25,12 @@
 #define LOCK_FREE_ARENA_ALLOCATOR_H
 
 #include <mutex>
-#include <semaphore>
-#include <future>
-#include <functional>
+#include <thread>
+#include <atomic>
 #include <vector>
 #include <assert.h>
 
 #include "core/memory_address.h"
-
 
 namespace lock_free {
 
@@ -224,21 +222,20 @@ public:
   template< typename... Args > 
   constexpr inline pointer    allocate( Args&&... args ) noexcept
   { 
-    if ( alloc_threshold > 0 )
+    if ( alloc_threshold > 0 ) [[likely]]
     {
       if ( _free_slots.load( std::memory_order_relaxed ) <= alloc_threshold ) 
       { _sem_th_alloc.release(); }
     }
-    else if ( _next_free.load( std::memory_order_relaxed ) == nullptr ) // && ( alloc_threshold == 0 ) second part is implicit.
+    else if ( _next_free.load( std::memory_order_relaxed ) == nullptr ) [[unlikely]] // && ( alloc_threshold == 0 ) second part is implicit.
     { add_mem_chuck(); } 
 
-    slot_pointer pCurrSlot = _next_free.load( std::memory_order_consume );
-    if ( pCurrSlot == nullptr )
+    slot_pointer pCurrSlot = _next_free.load( std::memory_order_relaxed );
+    if ( pCurrSlot == nullptr ) [[unlikely]]
       return nullptr;
 
-   
     do{
-    } while ( (pCurrSlot) && !_next_free.compare_exchange_weak( pCurrSlot, pCurrSlot->next()/*, std::memory_order_release, std::memory_order_relaxed*/ ) );
+    } while ( (pCurrSlot) && !_next_free.compare_exchange_weak( pCurrSlot, pCurrSlot->next(), std::memory_order_release, std::memory_order_relaxed ) );
 
     if ( pCurrSlot == nullptr )
       return nullptr;
@@ -271,11 +268,11 @@ public:
     userdata->~value_type();
 
     slot_pointer  pSlot     = memory_slot::slot_from_user_data(userdata);
-    slot_pointer  pCurrNext = _next_free.load( std::memory_order_consume );
+    slot_pointer  pCurrNext = _next_free.load( std::memory_order_relaxed );
 
     do{
       pSlot->set_free( pCurrNext );
-    } while ( !_next_free.compare_exchange_weak( pCurrNext, pSlot/*, std::memory_order_release, std::memory_order_relaxed*/ ) );
+    } while ( !_next_free.compare_exchange_weak( pCurrNext, pSlot, std::memory_order_release, std::memory_order_relaxed ) );
     
     _free_slots.fetch_add(1, std::memory_order_relaxed );
   }
@@ -455,7 +452,7 @@ private:
       mem_curs++;
     }
 
-    slot_pointer pCurrNext = _next_free.load( std::memory_order_consume );
+    slot_pointer pCurrNext = _next_free.load( std::memory_order_relaxed );
     do
     {
       _new_mem_chunck._last_slot->set_free( pCurrNext );
@@ -573,7 +570,7 @@ private:
   }
 
 private:
-  /***/ 
+  /***/
   struct memory_chunk {
     constexpr inline memory_chunk() noexcept
       : _first_slot(nullptr), _last_slot(nullptr)
