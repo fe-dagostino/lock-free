@@ -10,7 +10,6 @@ LINK_DIRECTORIES( ${LIB_BINARY_DIR} )
 
 include(FetchContent)
 
-
 # Download google benchmark
 #FetchContent_Declare(
 #    benchmark
@@ -19,6 +18,7 @@ include(FetchContent)
 #    GIT_SHALLOW TRUE)
 
 #FetchContent_MakeAvailable(benchmark)
+#add_subdirectory(benchmark)
 
 # Download nanobench
 FetchContent_Declare(
@@ -40,12 +40,8 @@ if ( LF_ENABLE_CPPCHECK )
   set(CMAKE_CXX_CPPCHECK "cppcheck")
 endif()
 
-add_executable( bm_arena_allocator              bm_arena_allocator.cpp           )
-#add_executable( bm_mt_arena_allocator           bm_mt_arena_allocator.cpp        )
-#add_executable( bm_arena_allocator_resize       bm_arena_allocator_resize.cpp    )
-#add_executable( bm_queue                        bm_queue.cpp                     )
+add_executable( bm_arena_allocator                       bm_arena_allocator.cpp       )
+add_executable( bm_mt_arena_allocator                    bm_mt_arena_allocator.cpp    )
 
-target_link_libraries( bm_arena_allocator                ${DEFAULT_LIBRARIES}   )
-#target_link_libraries( bm_mt_arena_allocator             ${DEFAULT_LIBRARIES}   )
-#target_link_libraries( bm_arena_allocator_resize         ${DEFAULT_LIBRARIES}   )
-#target_link_libraries( bm_queue                          ${DEFAULT_LIBRARIES}   )
+target_link_libraries( bm_arena_allocator                ${DEFAULT_LIBRARIES}         )
+target_link_libraries( bm_mt_arena_allocator             ${DEFAULT_LIBRARIES}         )
