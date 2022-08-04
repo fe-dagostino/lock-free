@@ -8,7 +8,7 @@ Current data structures implementations leverage C++20, so in order to build exa
 ## Lock-Free implementations - namespece `lock_free`
 
 Actually, the following lock-free data structures have been implemented:
-* [arena_allocator](./pages/common/arena_allocator/README.md) (*lock-free version*) : **`allocate()`** and **`deallocate()`** with a complexity of **`O(1)`**.
+* [arena_allocator](https://github.com/fe-dagostino/The-Magicians/blob/master/lock-free/arena_allocator/README.md) (*lock-free version*) : **`allocate()`** and **`deallocate()`** with a complexity of **`O(1)`**.
 * ring-buffer 
 * multi-queue
 
@@ -32,7 +32,7 @@ To leverage maximum performance from this implementation, it is necessary to use
 ---
 ## Other implementations - namespece `core`
 
-* [arena_allocator](https://github.com/fe-dagostino/The-Magicians/blob/master/lock-free/arena_allocator/README.md): **`allocate()`** and **`deallocate()`** with a complexity of **`O(1)`**.
+* [arena_allocator](https://github.com/fe-dagostino/The-Magicians/blob/master/lock-free/arena_allocator/README.md) (*Spinlock version*): **`allocate()`** and **`deallocate()`** with a complexity of **`O(1)`**.
 * [mem_unique_ptr]() ... *wip*
 
 
