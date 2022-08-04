@@ -32,7 +32,7 @@ To leverage maximum performance from this implementation, it is necessary to use
 ---
 ## Other implementations - namespece `core`
 
-* [arena_allocator](https://github.com/fe-dagostino/The-Magicians/blob/master/lock-free/arena_allocator/README.md) (*mutex version*): **`allocate()`** and **`deallocate()`** with a complexity of **`O(1)`**.
+* [arena_allocator](https://github.com/fe-dagostino/The-Magicians/blob/master/lock-free/arena_allocator/README.md): **`allocate()`** and **`deallocate()`** with a complexity of **`O(1)`**.
 * [mem_unique_ptr]() ... *wip*
 
 
