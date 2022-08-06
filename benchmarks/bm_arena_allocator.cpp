@@ -46,8 +46,7 @@ int main( int argc, const char* argv[] )
   
   lock_free::arena_allocator<data_item_t,u_int32_t,c_pre_items,c_pre_items, 0, 0 >   arena_lock_free;
   core::arena_allocator<data_item_t,u_int32_t,c_pre_items,c_pre_items, 0, 0 >        arena_mutex;
-  
-  
+
   data_item_t* arrItems[c_pre_items];
 
   ankerl::nanobench::Bench bench;
