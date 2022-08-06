@@ -31,6 +31,8 @@
 #include <assert.h>
 
 #include "core/memory_address.h"
+#include "core/memory_allocators.h"
+#include "core/fixed_lookup_table.h"
 
 namespace lock_free {
 
@@ -47,7 +49,8 @@ inline namespace LIB_VERSION {
 */
 template< typename data_t, typename data_size_t, 
           data_size_t chunk_size = 1024, data_size_t initial_size = chunk_size, data_size_t size_limit = 0,
-          data_size_t alloc_threshold = (chunk_size / 10)
+          data_size_t alloc_threshold = (chunk_size / 10),
+          typename allocator_t = core::default_allocator<data_size_t>
         > 
 requires std::is_unsigned_v<data_size_t> && (std::is_same_v<data_size_t,u_int32_t> || std::is_same_v<data_size_t,u_int64_t>)
          && ( ((sizeof(data_t) % alignof(std::max_align_t)) == 0 ) || ((alignof(std::max_align_t) % sizeof(data_t)) == 0 ) )
@@ -55,14 +58,21 @@ requires std::is_unsigned_v<data_size_t> && (std::is_same_v<data_size_t,u_int32_
          && ((sizeof(void*)==4) || (sizeof(void*)==8))
 class arena_allocator
 {
-public:
-  using value_type      = data_t; 
-  using size_type       = data_size_t;
-  using pointer         = data_t*;
-  using const_pointer   = const data_t*;
+private:
+  static constexpr const data_size_t        max_instances_per_type = 1024;
 
-  static constexpr const size_type value_type_size = sizeof(value_type);
-  
+public:
+  using value_type        = data_t; 
+  using size_type         = data_size_t;
+  using pointer           = data_t*;
+  using const_pointer     = const data_t*;
+  using allocator_type    = allocator_t;
+  using lookup_table_type = core::fixed_lookup_table<arena_allocator*,size_type,max_instances_per_type,nullptr>;
+
+  static constexpr const size_type         value_type_size  = sizeof(value_type);
+  static lookup_table_type                 instances_table;
+
+
 private:
   /***/
   struct memory_slot {
@@ -97,12 +107,26 @@ private:
 
     /***/
     constexpr inline void         set_free( memory_slot* next_free ) noexcept
-    { _ptr_next.set_address( next_free, 0 ); }
+    { 
+      _ptr_next.set_address( next_free ); 
+      _ptr_next.unset_flag ( core::memory_address<memory_slot,size_type>::address_flags::DESTROY ); 
+    }
 
     /***/
     constexpr inline void         set_in_use() noexcept
-    { _ptr_next.set_address( nullptr, (size_type)core::memory_address<memory_slot,size_type>::address_flags::DESTROY); }
+    { 
+      _ptr_next.set_address( nullptr );
+      _ptr_next.set_flag   ( core::memory_address<memory_slot,size_type>::address_flags::DESTROY ); 
+    }
     
+    /***/
+    constexpr inline size_type    get_index() noexcept
+    { return _ptr_next.get_counter(); }
+
+    /***/
+    constexpr inline void         set_index( const size_type& index ) noexcept
+    { _ptr_next.set_counter( index ); }
+
     /***/
     constexpr static inline memory_slot* slot_from_user_data( pointer ptr ) noexcept
     { return std::bit_cast<memory_slot*>(std::bit_cast<char*>(ptr)-core::memory_address<memory_slot,size_type>::memory_address_size); }
@@ -120,13 +144,16 @@ public:
 
   /***/
   constexpr inline arena_allocator() noexcept
-    : _next_free(nullptr), _max_length(0), _free_slots(0), _capacity(0),
+    : _ndx_instance( 0 ),
+      _next_free(nullptr), _max_length(0), _free_slots(0), _capacity(0),
       _th_alloc(nullptr), _sem_th_alloc(0), _th_alloc_exit( false )
   {
     static_assert(decltype(_next_free )::is_always_lock_free);
     static_assert(decltype(_max_length)::is_always_lock_free);
     static_assert(decltype(_free_slots)::is_always_lock_free);
     static_assert(decltype(_capacity  )::is_always_lock_free);
+
+    capture_instance_index();
 
     while ( max_length() < initial_size )
     {
@@ -143,6 +170,8 @@ public:
   /***/
   constexpr inline ~arena_allocator() noexcept
   {
+    release_instance_index();
+
     if ( alloc_threshold > 0 )
     {
       _th_alloc_exit.store( true, std::memory_order_release );
@@ -267,8 +296,9 @@ public:
 
     userdata->~value_type();
 
-    slot_pointer  pSlot     = memory_slot::slot_from_user_data(userdata);
-    slot_pointer  pCurrNext = _next_free.load( std::memory_order_relaxed );
+    slot_pointer     pSlot     = memory_slot::slot_from_user_data(userdata);
+    arena_allocator* pArena    = instances_table[pSlot->get_index()];
+    slot_pointer     pCurrNext = pArena->_next_free.load( std::memory_order_relaxed );
 
     do{
       pSlot->set_free( pCurrNext );
@@ -437,7 +467,7 @@ private:
   {
     memory_chunk _new_mem_chunck;
    
-    _new_mem_chunck._first_slot = static_cast<slot_pointer>(std::aligned_alloc( alignof(std::max_align_t), memory_required_per_chunk ));
+    _new_mem_chunck._first_slot = static_cast<slot_pointer>(_mem_allocator.allocate( memory_required_per_chunk ));
     if ( _new_mem_chunck._first_slot == nullptr )
     { return false; }
 
@@ -448,7 +478,9 @@ private:
     size_type    slots_nb = chunk_size; 
     while ( slots_nb-- )
     {
-      mem_curs = new(mem_curs) memory_slot((slots_nb>0)?(mem_curs+1):nullptr);
+      mem_curs->set_index( _ndx_instance );
+      mem_curs->set_free ((slots_nb>0)?(mem_curs+1):nullptr);
+
       mem_curs++;
     }
 
@@ -458,7 +490,6 @@ private:
       _new_mem_chunck._last_slot->set_free( pCurrNext );
 
     } while ( !_next_free.compare_exchange_weak( pCurrNext, _new_mem_chunck._first_slot, std::memory_order_release, std::memory_order_relaxed ) );
-    
     
     // Protect access to _next_free
     _mtx_mem_chunks.lock();
@@ -485,7 +516,7 @@ private:
   {
     memory_chunk _new_mem_chunck;
    
-    _new_mem_chunck._first_slot = static_cast<slot_pointer>(std::aligned_alloc( alignof(std::max_align_t), memory_required_per_chunk ));
+    _new_mem_chunck._first_slot = static_cast<slot_pointer>(_mem_allocator.allocate( memory_required_per_chunk ));
     if ( _new_mem_chunck._first_slot == nullptr )
     { return false; }
 
@@ -496,7 +527,9 @@ private:
     size_type    slots_nb = chunk_size; 
     while ( slots_nb-- )
     {
-      mem_curs = new(mem_curs) memory_slot((slots_nb>0)?(mem_curs+1):nullptr);
+      mem_curs->set_index( _ndx_instance );
+      mem_curs->set_free((slots_nb>0)?(mem_curs+1):nullptr);
+
       mem_curs++;
     }
 
@@ -537,7 +570,7 @@ private:
       }
   
       // Release memory allocated in the in the constructor.
-      std::free( mc._first_slot );
+      _mem_allocator.deallocate( mc._first_slot, memory_required_per_chunk );
       
       mc.reset();
     }
@@ -569,6 +602,20 @@ private:
     std::cout << "------------------END------------------" << std::endl;
   }
 
+  /***/
+  constexpr inline void  capture_instance_index()
+  {
+    [[maybe_unused]] bool ret_val = instances_table.add(_ndx_instance, this );
+    assert( ret_val == true );
+  }
+
+  /***/
+  constexpr inline void  release_instance_index()
+  {
+    [[maybe_unused]] bool ret_val = instances_table.reset_at(_ndx_instance);
+    assert( ret_val == true );
+  }
+
 private:
   /***/
   struct memory_chunk {
@@ -586,6 +633,9 @@ private:
     slot_pointer     _last_slot;
   };
 
+  size_type                   _ndx_instance;
+
+  allocator_type              _mem_allocator;
   std::vector<memory_chunk>   _mem_chunks;
 
   std::atomic<slot_pointer>   _next_free;
@@ -599,6 +649,11 @@ private:
   std::binary_semaphore       _sem_th_alloc; 
   std::atomic_bool            _th_alloc_exit;
 };
+
+template< typename data_t, typename data_size_t, data_size_t chunk_size, data_size_t initial_size, data_size_t size_limit,
+          data_size_t alloc_threshold, typename allocator_t >
+arena_allocator<data_t,data_size_t,chunk_size,initial_size,size_limit,alloc_threshold,allocator_t>::lookup_table_type          
+  arena_allocator<data_t,data_size_t,chunk_size,initial_size,size_limit,alloc_threshold,allocator_t>::instances_table;
 
 } // namespace LIB_VERSION 
 
