@@ -27,6 +27,7 @@
 #include <bit>
 #include <type_traits>
 #include <cstddef>
+#include <cstdint>
 
 namespace core {
 
@@ -77,27 +78,36 @@ public:
 
   /***/
   constexpr inline memory_address() noexcept
-    : _addr( std::bit_cast<base_t>(nullptr) ), _flags(0)
+    : _addr( std::bit_cast<base_t>(nullptr) ), _flags(0), _counter(0)
   {}
   /***/
   constexpr inline memory_address( pointer ptr ) noexcept
-    : _addr( std::bit_cast<base_t>(ptr) ), _flags(0)
+    : _addr( std::bit_cast<base_t>(ptr) ), _flags(0), _counter(0)
   {}  
   /***/
-  constexpr inline memory_address( pointer ptr, base_t flags ) noexcept
-    : _addr( std::bit_cast<base_t>(ptr) ), _flags(flags)
+  constexpr inline memory_address( pointer ptr, base_t flags, base_t counter ) noexcept
+    : _addr( std::bit_cast<base_t>(ptr) ), _flags(flags), _counter(counter)
   {}
+
+  /***/
+  constexpr inline void   reset( pointer ptr, base_t flags = 0, base_t counter = 0 ) noexcept
+  {
+    _addr    = std::bit_cast<base_t>(ptr);
+    _flags   = flags;
+    _counter = counter;
+  }
 
   /***/  
   constexpr inline operator pointer() const noexcept
   { return std::bit_cast<pointer>(_addr); }
 
   /***/
-  constexpr inline void   set_address( pointer ptr, base_t flags = 0 ) noexcept
-  {
-    _addr  = std::bit_cast<base_t>(ptr);
-    _flags = flags;
-  }
+  constexpr inline base_t get_address() const noexcept 
+  { return std::bit_cast<pointer>(_addr); }
+
+  /***/
+  constexpr inline void   set_address( pointer ptr ) noexcept
+  { _addr    = std::bit_cast<base_t>(ptr); }
 
   /***/
   constexpr inline base_t flags() const noexcept 
@@ -115,9 +125,18 @@ public:
   constexpr inline void   unset_flag( address_flags flag ) noexcept
   { _flags &= ~(base_t)flag; }
   
+  /***/
+  constexpr inline base_t get_counter() const noexcept 
+  { return _counter; }
+
+  /***/
+  constexpr inline void   set_counter( base_t counter ) noexcept 
+  { _counter = counter; }
+
 private:
-  base_t   _addr  : conditional<(sizeof(pointer)==8), 48, 32>::value;
-  base_t   _flags : conditional<(sizeof(pointer)==8), 16, 32>::value;
+  base_t   _addr    : conditional<(sizeof(pointer)==8), 48, 32>::value;
+  base_t   _flags   : conditional<(sizeof(pointer)==8),  4,  4>::value;
+  base_t   _counter : conditional<(sizeof(pointer)==8), 12, 28>::value;
 };
 
 } // namespace LIB_VERSION 
