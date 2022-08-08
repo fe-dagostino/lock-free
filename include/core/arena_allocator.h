@@ -24,7 +24,6 @@
 #ifndef CORE_ARENA_ALLOCATOR_H
 #define CORE_ARENA_ALLOCATOR_H
 
-#include <thread>
 #include <vector>
 #include <assert.h>
 
@@ -157,7 +156,23 @@ public:
 
     if ( alloc_threshold > 0 )
     {
-      _th_alloc = new std::thread( &arena_allocator<value_type,size_type, chunk_size, initial_size, size_limit, alloc_threshold>::async_add_mem_chuck, this );
+      _th_alloc = new std::thread( []( arena_allocator* pArena ){ 
+                                                                  while ( pArena->_th_alloc_exit.load(std::memory_order_acquire) == false )
+                                                                  {
+                                                                    pArena->_sem_th_alloc.acquire();
+
+                                                                    if ( pArena->_th_alloc_exit.load(std::memory_order_acquire) == true  )
+                                                                      break;
+
+                                                                    if (( pArena->max_length() < size_limit ) || (size_limit == 0))
+                                                                    {
+                                                                      if ( pArena->add_mem_chuck( ) == false )
+                                                                      {
+                                                                        // Reached physical memory limit
+                                                                      }
+                                                                    }
+                                                                  }         
+                                                                }, this );
     }
   }
 
@@ -175,7 +190,7 @@ public:
     // Release all chunks
     clear();
 
-    if ( alloc_threshold > 0 )
+    if (( alloc_threshold > 0 ) && (_th_alloc!=nullptr))
     {
       _th_alloc->join();
       delete _th_alloc;
@@ -451,27 +466,46 @@ public:
     return false;
   }
 
-private:
-  /***/
-  constexpr inline void async_add_mem_chuck( ) noexcept
+  /**
+   * @brief Invoke valut_type destructor for each slot that is in use,
+   *        then release all the memory associated with the chuncks.
+   *        After the call to this methos the allocator will completely 
+   *        empty and no memroy chunck are reserved.
+   * 
+   *        Note: this method is not thread safe.
+   */
+  constexpr inline void clear() noexcept
   {
-    while ( _th_alloc_exit.load(std::memory_order_relaxed) == false )
+    for ( auto& mc : _mem_chunks )
     {
-      _sem_th_alloc.acquire();
-
-      if ( _th_alloc_exit.load(std::memory_order_relaxed) == true  )
-        break;
-
-      if (( max_length() < size_limit ) || (size_limit == 0))
+      // Iterate on overall slots in order to invoke ~value_type() 
+      // for all object currently in use.
+      slot_pointer mem_curs = mc._first_slot;
+      size_type    slots_nb = 0; 
+  
+      while ( slots_nb++ < chunk_size )
       {
-        if ( add_mem_chuck( ) == false )
-        {
-          // Reached physical memory limit
-        }
+        if ( mem_curs->in_use() == true )
+          mem_curs->prt()->~value_type();
+
+        mem_curs++;
       }
+  
+      // Release memory allocated in the in the constructor.
+      _mem_allocator.deallocate( mc._first_slot, memory_required_per_chunk );
+      
+      mc.reset();
     }
+    _mem_chunks.clear();
+    
+    // Update max_length
+    _max_length = 0;
+    _free_slots = 0;
+    _capacity   = 0;      
+    _next_free  = nullptr;
   }
 
+private:
   /***/
   constexpr inline bool add_mem_chuck() noexcept
   {
@@ -557,38 +591,6 @@ private:
     _capacity    = memory_required_per_chunk*_mem_chunks.size();      
 
     return true;
-  }
-
-  /***/
-  constexpr inline void clear() noexcept
-  {
-    for ( auto& mc : _mem_chunks )
-    {
-      // Iterate on overall slots in order to invoke ~value_type() 
-      // for all object currently in use.
-      slot_pointer mem_curs = mc._first_slot;
-      size_type    slots_nb = 0; 
-  
-      while ( slots_nb++ < chunk_size )
-      {
-        if ( mem_curs->in_use() == true )
-          mem_curs->prt()->~value_type();
-
-        mem_curs++;
-      }
-  
-      // Release memory allocated in the in the constructor.
-      _mem_allocator.deallocate( mc._first_slot, memory_required_per_chunk );
-      
-      mc.reset();
-    }
-    _mem_chunks.clear();
-    
-    // Update max_length
-    _max_length = 0;
-    _free_slots = 0;
-    _capacity   = 0;      
-    _next_free  = nullptr;
   }
 
   /***/

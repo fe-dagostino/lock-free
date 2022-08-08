@@ -24,9 +24,6 @@
 #ifndef LOCK_FREE_ARENA_ALLOCATOR_H
 #define LOCK_FREE_ARENA_ALLOCATOR_H
 
-#include <mutex>
-#include <thread>
-#include <atomic>
 #include <vector>
 #include <assert.h>
 
@@ -163,7 +160,23 @@ public:
 
     if ( alloc_threshold > 0 )
     {
-      _th_alloc = new std::thread( &arena_allocator<value_type,size_type, chunk_size, initial_size, size_limit, alloc_threshold>::async_add_mem_chuck, this );
+      _th_alloc = new std::thread( []( arena_allocator* pArena ){ 
+                                                                  while ( pArena->_th_alloc_exit.load(std::memory_order_acquire) == false )
+                                                                  {
+                                                                    pArena->_sem_th_alloc.acquire();
+
+                                                                    if ( pArena->_th_alloc_exit.load(std::memory_order_acquire) == true  )
+                                                                      break;
+
+                                                                    if (( pArena->max_length() < size_limit ) || (size_limit == 0))
+                                                                    {
+                                                                      if ( pArena->add_mem_chuck( ) == false )
+                                                                      {
+                                                                        // Reached physical memory limit
+                                                                      }
+                                                                    }
+                                                                  }         
+                                                                }, this );
     }
   }
 
@@ -181,7 +194,7 @@ public:
     // Release all chunks
     clear();
 
-    if ( alloc_threshold > 0 )
+    if (( alloc_threshold > 0 ) && (_th_alloc!=nullptr))
     {
       _th_alloc->join();
       delete _th_alloc;
@@ -259,19 +272,21 @@ public:
     else if ( _next_free.load( std::memory_order_relaxed ) == nullptr ) [[unlikely]] // && ( alloc_threshold == 0 ) second part is implicit.
     { add_mem_chuck(); } 
 
-    slot_pointer pCurrSlot = _next_free.load( std::memory_order_relaxed );
+    slot_pointer pCurrSlot = _next_free.load( std::memory_order_acquire );
     if ( pCurrSlot == nullptr ) [[unlikely]]
       return nullptr;
 
     do{
-    } while ( (pCurrSlot) && !_next_free.compare_exchange_weak( pCurrSlot, pCurrSlot->next(), std::memory_order_release, std::memory_order_relaxed ) );
+    } while ( (pCurrSlot) && !_next_free.compare_exchange_weak( pCurrSlot, pCurrSlot->next(), std::memory_order_acq_rel, std::memory_order_acquire ) );
 
     if ( pCurrSlot == nullptr )
       return nullptr;
 
     pCurrSlot->set_in_use();
 
-    _free_slots.fetch_sub(1, std::memory_order_relaxed);
+    size_type _cur_value = _free_slots.load( std::memory_order_acquire );
+    do {
+    } while ( !_free_slots.compare_exchange_weak( _cur_value, _cur_value-1, std::memory_order_acq_rel, std::memory_order_acquire ) );     
     
     return new(pCurrSlot->prt()) value_type( std::forward<Args>(args)... );
   }
@@ -298,13 +313,15 @@ public:
 
     slot_pointer     pSlot     = memory_slot::slot_from_user_data(userdata);
     arena_allocator* pArena    = instances_table[pSlot->get_index()];
-    slot_pointer     pCurrNext = pArena->_next_free.load( std::memory_order_relaxed );
+    slot_pointer     pCurrNext = pArena->_next_free.load( std::memory_order_acquire );
 
     do{
       pSlot->set_free( pCurrNext );
-    } while ( !_next_free.compare_exchange_weak( pCurrNext, pSlot, std::memory_order_release, std::memory_order_relaxed ) );
+    } while ( !_next_free.compare_exchange_weak( pCurrNext, pSlot, std::memory_order_acq_rel, std::memory_order_acquire ) );
     
-    _free_slots.fetch_add(1, std::memory_order_relaxed );
+    size_type _cur_value = _free_slots.load( std::memory_order_acquire );
+    do {
+    } while ( !_free_slots.compare_exchange_weak( _cur_value, _cur_value+1, std::memory_order_acq_rel, std::memory_order_acquire ) );    
   }
 
   /**
@@ -441,27 +458,46 @@ public:
     return false;
   }
 
-private:
-  /***/
-  constexpr inline void async_add_mem_chuck( ) noexcept
+  /**
+   * @brief Invoke valut_type destructor for each slot that is in use,
+   *        then release all the memory associated with the chuncks.
+   *        After the call to this methos the allocator will completely 
+   *        empty and no memroy chunck are reserved.
+   * 
+   *        Note: this method is not thread safe.
+   */
+  constexpr inline void clear() noexcept
   {
-    while ( _th_alloc_exit.load(std::memory_order_relaxed) == false )
+    for ( auto& mc : _mem_chunks )
     {
-      _sem_th_alloc.acquire();
-
-      if ( _th_alloc_exit.load(std::memory_order_relaxed) == true  )
-        break;
-
-      if (( max_length() < size_limit ) || (size_limit == 0))
+      // Iterate on overall slots in order to invoke ~value_type() 
+      // for all object currently in use.
+      slot_pointer mem_curs = mc._first_slot;
+      size_type    slots_nb = 0; 
+  
+      while ( slots_nb++ < chunk_size )
       {
-        if ( add_mem_chuck( ) == false )
-        {
-          // Reached physical memory limit
-        }
+        if ( mem_curs->in_use() == true )
+          mem_curs->prt()->~value_type();
+
+        mem_curs++;
       }
+  
+      // Release memory allocated in the in the constructor.
+      _mem_allocator.deallocate( mc._first_slot, memory_required_per_chunk );
+      
+      mc.reset();
     }
+    _mem_chunks.clear();
+    
+    // Update max_length
+    _max_length.store(       0, std::memory_order_relaxed );
+    _free_slots.store(       0, std::memory_order_relaxed );
+    _capacity.store  (       0, std::memory_order_relaxed );
+    _next_free.store ( nullptr, std::memory_order_relaxed );  
   }
 
+private:
   /***/
   constexpr inline bool add_mem_chuck() noexcept
   {
@@ -484,7 +520,7 @@ private:
       mem_curs++;
     }
 
-    slot_pointer pCurrNext = _next_free.load( std::memory_order_relaxed );
+    slot_pointer pCurrNext = _next_free.load( std::memory_order_acquire );
     do
     {
       _new_mem_chunck._last_slot->set_free( pCurrNext );
@@ -549,38 +585,6 @@ private:
     _capacity.store( memory_required_per_chunk*_mem_chunks.size(), std::memory_order_relaxed );
 
     return true;
-  }
-
-  /***/
-  constexpr inline void clear() noexcept
-  {
-    for ( auto& mc : _mem_chunks )
-    {
-      // Iterate on overall slots in order to invoke ~value_type() 
-      // for all object currently in use.
-      slot_pointer mem_curs = mc._first_slot;
-      size_type    slots_nb = 0; 
-  
-      while ( slots_nb++ < chunk_size )
-      {
-        if ( mem_curs->in_use() == true )
-          mem_curs->prt()->~value_type();
-
-        mem_curs++;
-      }
-  
-      // Release memory allocated in the in the constructor.
-      _mem_allocator.deallocate( mc._first_slot, memory_required_per_chunk );
-      
-      mc.reset();
-    }
-    _mem_chunks.clear();
-    
-    // Update max_length
-    _max_length.store(       0, std::memory_order_relaxed );
-    _free_slots.store(       0, std::memory_order_relaxed );
-    _capacity.store  (       0, std::memory_order_relaxed );
-    _next_free.store ( nullptr, std::memory_order_relaxed );  
   }
 
   /***/
