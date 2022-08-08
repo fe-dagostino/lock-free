@@ -38,25 +38,19 @@ namespace lock_free {
 inline namespace LIB_VERSION {
 
 /***
- * @brief A generic free-lock multi-queue that can be used in different scenarios.
- *        Even there are some design decisiton that have a minimum impact on performances, this
- *        multi-queue is performing at its maximum in all uses cases where items are known 
- *        and implementation can reuse existing preallocated buffers instead to create new chunks.
+ * @brief A generic free-lock queue that can be used in different arena_allocator.
  * 
- * data_t        data type held by the multi queue
- * data_size_t   data type to be used internally for counting and sizing. 
- *               This is required to be 32 bits or 64 bits in order to keep performances.
- * queues        allow to specify number of queues provided by the multi-queue data structure,
- *               for each queue will be possible to dedicate a thread or to share it between multiple threads.
- *               Best approach for performances for example on a 16 core machine should be to keep
- *               8 x producer and 8 x consumer, but also multi producer single consumer are allowed.
- * chunk_size    number of data_t items to pre-alloc each time that is needed.
- * reserve_size  reserved size for each queue, this size will be reserved when the object is created.
- *               When application level know the amount of memory items to be used this parameter allow
- *               to improve significantly performances as well as to avoid fragmentation.
- * max_size      default value is 0 that means the queue can grow until there is available memory.
- *               A value different greater than 0 will have the effect to limit max number of items on 
- *               the single queue.
+ * @tparam data_t        data type held by the queue
+ * @tparam data_size_t   data type to be used internally for counting and sizing. 
+ *                       This is required to be 32 bits or 64 bits in order to keep performances.
+ * @tparam chunk_size    number of data_t items to pre-alloc each time that is needed.
+ * @tparam reserve_size  reserved size for the queue, this size will be reserved when the object is created.
+ *                       When application level know the amount of memory items to be used this parameter allow
+ *                       to improve significantly performances as well as to avoid fragmentation.
+ * @tparam max_size      default value is 0 that means the queue can grow until there is available memory.
+ *                       A value different greater than 0 will have the effect to limit max number of items on 
+ *                       the queue.
+ * @tparam arena_t       lock_free::arena_allocator (default), core::arena_allocator or user defined arena allocator.
 */
 template<typename data_t, typename data_size_t,  
          data_size_t chunk_size = 1024, data_size_t reserve_size = chunk_size, data_size_t max_size = 0,
@@ -69,7 +63,6 @@ class queue
 public:
   using value_type      = data_t; 
   using size_type       = data_size_t;
-  using queue_id        = data_size_t;
   using reference       = data_t&;
   using const_reference = const data_t&;
   using pointer         = data_t*;
