@@ -24,10 +24,13 @@
 #ifndef CORE_TYPES_H
 #define CORE_TYPES_H
 
-#include <bit>
-#include <type_traits>
 #include <cstddef>
 #include <cstdint>
+#include <type_traits>
+
+#include <mutex>
+#include <thread>
+#include <atomic>
 
 namespace core {
 
