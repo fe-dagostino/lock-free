@@ -29,6 +29,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "types.h"
 namespace core {
 
 inline namespace LIB_VERSION {
@@ -54,15 +55,7 @@ public:
   static constexpr const size_type memory_address_size = sizeof(memory_address<value_type,size_type>);
 
 private:
-  /**
-   * @brief Similar to conditional_t, the same pattern have been applied to 
-   *        values.
-   */
-  template<bool B, size_type T, size_type F>
-  struct conditional              { enum : size_type { value = T }; };
-  /* specialization for 'false' */
-  template<size_type T, size_type F>
-  struct conditional<false, T, F> { enum : size_type { value = F }; };
+
 
 public:
   /** 
@@ -134,9 +127,9 @@ public:
   { _counter = counter; }
 
 private:
-  base_t   _addr    : conditional<(sizeof(pointer)==8), 48, 32>::value;
-  base_t   _flags   : conditional<(sizeof(pointer)==8),  4,  4>::value;
-  base_t   _counter : conditional<(sizeof(pointer)==8), 12, 28>::value;
+  base_t   _addr    : conditional<size_type,(sizeof(pointer)==8), 48, 32>::value;
+  base_t   _flags   : conditional<size_type,(sizeof(pointer)==8),  4,  4>::value;
+  base_t   _counter : conditional<size_type,(sizeof(pointer)==8), 12, 28>::value;
 };
 
 } // namespace LIB_VERSION 
