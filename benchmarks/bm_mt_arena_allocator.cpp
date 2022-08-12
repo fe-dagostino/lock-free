@@ -142,7 +142,7 @@ int main( int argc, const char* argv[] )
                   for ( u_int32_t i = 0; i < adj_pre_items; ++i )
                   { 
                     if ( arrItems[(thread_ndx*c_pre_items)+i] != nullptr )
-                    { arena_mutex.deallocate(arrItems[(thread_ndx*c_pre_items)+i]); }
+                    { (void)arena_mutex.deallocate(arrItems[(thread_ndx*c_pre_items)+i]); }
                   }
                 }
                 else //if ( c_option == "lock-free" )
@@ -157,7 +157,7 @@ int main( int argc, const char* argv[] )
                   for ( u_int32_t i = 0; i < adj_pre_items; ++i )
                   {
                     if ( arrItems[(thread_ndx*c_pre_items)+i] != nullptr )
-                    { arena_lock_free.deallocate(arrItems[(thread_ndx*c_pre_items)+i]); }
+                    { (void)arena_lock_free.deallocate(arrItems[(thread_ndx*c_pre_items)+i]); }
                   }
                 }
                 
