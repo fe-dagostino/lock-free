@@ -75,7 +75,7 @@ int main( int argc, const char* argv[] )
         for ( u_int32_t i = 0; i < c_pre_items; ++i )
           arrItems[i] = arena_lock_free.allocate(i);
         for ( u_int32_t i = 0; i < c_pre_items; ++i )
-          arena_lock_free.deallocate(arrItems[i]);
+          (void)arena_lock_free.deallocate(arrItems[i]);
         
     });
 
@@ -91,7 +91,7 @@ int main( int argc, const char* argv[] )
         for ( u_int32_t i = 0; i < c_pre_items; ++i )
           arrItems[i] = arena_lock_free.unsafe_allocate(i);
         for ( u_int32_t i = 0; i < c_pre_items; ++i )
-          arena_lock_free.unsafe_deallocate(arrItems[i]);
+          (void)arena_lock_free.unsafe_deallocate(arrItems[i]);
       }
         
     });
@@ -106,7 +106,7 @@ int main( int argc, const char* argv[] )
         for ( u_int32_t i = 0; i < c_pre_items; ++i )
           arrItems[i] = arena_mutex.allocate(i);
         for ( u_int32_t i = 0; i < c_pre_items; ++i )
-          arena_mutex.deallocate(arrItems[i]);
+          (void)arena_mutex.deallocate(arrItems[i]);
         
     });
 
@@ -122,7 +122,7 @@ int main( int argc, const char* argv[] )
         for ( u_int32_t i = 0; i < c_pre_items; ++i )
           arrItems[i] = arena_mutex.unsafe_allocate(i);
         for ( u_int32_t i = 0; i < c_pre_items; ++i )
-          arena_mutex.unsafe_deallocate(arrItems[i]);
+          (void)arena_mutex.unsafe_deallocate(arrItems[i]);
       }
         
     });
