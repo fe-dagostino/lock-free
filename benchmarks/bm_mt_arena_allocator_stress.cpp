@@ -179,9 +179,9 @@ int main( int argc, const char* argv[] )
                               << "\n - capacity()   = " << arena.capacity()   
                               << "\n - max_size()   = " << arena.max_size()   << std::endl;
 
-  uint32_t nb_threads     = 16;
+  uint32_t nb_threads     = 12;
   uint32_t mon_time_ms    = 1000;
-  uint32_t run_time_ms    = 60000;       // milliseconds
+  uint32_t run_time_ms    = 10000;       // milliseconds
 
   std::vector<std::thread>  vec_alloc_dealloc;
 
