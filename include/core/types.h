@@ -38,6 +38,14 @@ namespace core {
 
 inline namespace LIB_VERSION {
 
+enum class return_type {
+    eFailue          =    0,
+    eSuccess         =    1,
+
+    eDoubleDelete    =  100  
+    
+};
+
 /**
  * @brief Similar to conditional_t, the same pattern have been applied to 
  *        values.
