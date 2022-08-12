@@ -40,8 +40,10 @@ if ( LF_ENABLE_CPPCHECK )
   set(CMAKE_CXX_CPPCHECK "cppcheck")
 endif()
 
-add_executable( bm_arena_allocator                       bm_arena_allocator.cpp       )
-add_executable( bm_mt_arena_allocator                    bm_mt_arena_allocator.cpp    )
+add_executable( bm_arena_allocator                       bm_arena_allocator.cpp           )
+add_executable( bm_mt_arena_allocator                    bm_mt_arena_allocator.cpp        )
+add_executable( bm_mt_arena_allocator_stress             bm_mt_arena_allocator_stress.cpp )
 
 target_link_libraries( bm_arena_allocator                ${DEFAULT_LIBRARIES}         )
 target_link_libraries( bm_mt_arena_allocator             ${DEFAULT_LIBRARIES}         )
+target_link_libraries( bm_mt_arena_allocator_stress      ${DEFAULT_LIBRARIES}         )
