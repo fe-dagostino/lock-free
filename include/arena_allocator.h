@@ -325,7 +325,7 @@ public:
    *  
    * @param userdata  pointer to user data previously allocated with allocate().
    */
-  constexpr inline bool       deallocate( pointer userdata ) noexcept
+  [[nodiscard]] constexpr inline core::return_type   deallocate( pointer userdata ) noexcept
   {
     assert( userdata != nullptr );
 
@@ -338,7 +338,7 @@ public:
     if ( pSlot->is_free() )
     {
       // double free detected 
-      return false;
+      return core::return_type::eDoubleDelete;
     }
 
     do{
@@ -349,7 +349,7 @@ public:
     do {
     } while ( !pArena->_free_slots.compare_exchange_weak( _cur_value, _cur_value+1, std::memory_order_seq_cst, std::memory_order_acquire ) );
 
-    return true;
+    return core::return_type::eSuccess;
   }
 
   /**
@@ -414,7 +414,7 @@ public:
    *   
    * @param userdata  pointer to user data previously allocated with allocate().
    */
-  constexpr inline bool       unsafe_deallocate( pointer userdata ) noexcept
+  [[nodiscard]] constexpr inline core::return_type       unsafe_deallocate( pointer userdata ) noexcept
   {
     assert( userdata != nullptr );
 
@@ -426,7 +426,7 @@ public:
     if ( pSlot->is_free() )
     {
       // double free detected 
-      return false;
+      return core::return_type::eDoubleDelete;
     }
 
     pSlot->set_free( pArena->_next_free.load( std::memory_order_relaxed ) );
@@ -435,7 +435,7 @@ public:
 
     pArena->_free_slots.fetch_add( 1, std::memory_order_relaxed );
 
-    return true;
+    return core::return_type::eSuccess;
   }
 
   /**
@@ -622,37 +622,6 @@ private:
     _capacity.store( memory_required_per_chunk*_mem_chunks.size(), std::memory_order_relaxed );
 
     return true;
-  }
-
-  /***/
-  void print_internal_status()
-  { 
-    std::cout << "-----------------BEGIN-----------------" << std::endl;
-    std::cout << "_next_free  = " << _next_free.load()  << std::endl;
-    std::cout << "_max_length = " << _max_length.load() << std::endl;
-    std::cout << "_free_slots = " << _free_slots.load() << std::endl;
-    std::cout << "_capacity   = " << _capacity.load()   << std::endl;
-    
-    for ( size_type ndx = 0; ndx < _mem_chunks.size(); ++ndx )
-    {
-      memory_chunk& mc = _mem_chunks.at(ndx);
-
-      std::cout << "[" << ndx << "] _first_slot = " << mc._first_slot << " - next =" << mc._first_slot->_ptr_next << std::endl;
-      std::cout << "[" << ndx << "] _last_slot  = " << mc._last_slot  << " - next =" << mc._last_slot->_ptr_next  << std::endl;
-    }
-
-    std::cout << "***************************************" << std::endl;
-    std::cout << "***************************************" << std::endl;
-
-    slot_pointer mem_curs = _mem_chunks.at(0)._first_slot;
-    size_type    slots_nb = 0; 
-    while ( slots_nb++ < chunk_size )
-    {
-      std::cout << "slot [" <<  slots_nb  << "] slot addr [" << mem_curs << "] next [" << mem_curs->next() << "]" << std::endl;
-
-      mem_curs++;
-    }
-    std::cout << "------------------END------------------" << std::endl;
   }
 
   /***/
