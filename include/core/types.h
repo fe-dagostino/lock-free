@@ -32,6 +32,8 @@
 #include <thread>
 #include <atomic>
 
+using namespace std::chrono_literals;
+
 namespace core {
 
 inline namespace LIB_VERSION {
