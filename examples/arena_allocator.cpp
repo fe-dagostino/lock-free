@@ -90,10 +90,10 @@ int main( int argc, const char* argv[] )
   std::this_thread::sleep_for(1000ms);
   std::cout << " Read new max_length() " << std::endl;
   std::cout << "max_length() : " << allocator.max_length() << std::endl;
-  allocator.deallocate(pDataItem_3);
-  allocator.deallocate(pDataItem_4);
-  allocator.deallocate(pDataItem_5);
-  allocator.deallocate(pDataItem_6);
+  (void)allocator.deallocate(pDataItem_3);
+  (void)allocator.deallocate(pDataItem_4);
+  (void)allocator.deallocate(pDataItem_5);
+  (void)allocator.deallocate(pDataItem_6);
   std::cout << " ----------------- " << std::endl;
 
   // Create a pointer to data_item_t not managed by arena_allocator;
@@ -114,7 +114,7 @@ int main( int argc, const char* argv[] )
   std::cout << std::endl;
 
   std::cout << "deallocate data_item_1 calling allocator.deallocate()" << std::endl;
-  allocator.deallocate(pDataItem_1);
+  (void)allocator.deallocate(pDataItem_1);
 
   std::cout << "WE DO NOT deallocate data_item_2" << std::endl;
   std::cout << "data_item_2 destructor will be automatically invoked by the arena_allocator." << std::endl;
