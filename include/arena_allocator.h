@@ -43,6 +43,20 @@ inline namespace LIB_VERSION {
  *  - we want to avoid memory fragmentation, since the program is supposed to run for long time without interruptions;
  *  - performances in our program are important and we want to avoid waste of CPU cycles.
  * 
+ * @tparam data_t           data type held by the queue
+ * @tparam data_size_t      data type to be used internally for counting and sizing. 
+ *                          This is required to be 32 bits or 64 bits in order to keep performances.
+ * @tparam chunk_size       number of data_t items to pre-alloc each time that is needed.
+ * @tparam initial_size     reserved size for the queue, this size will be reserved when the object is created.
+ *                          When application level know the amount of memory items to be used this parameter allow
+ *                          to improve significantly performances as well as to avoid fragmentation.
+ * @tparam size_limit       default value is 0 that means the queue can grow until there is available memory.
+ *                          A value different greater than 0 will have the effect to limit max number of items on 
+ *                          the queue.
+ * @tparam alloc_threshold  when 0 chunck allocation is synchronous, when >0 specify the threshold to activate
+ *                          an auxiliare thread to add a new chunck. 
+ * @tparam allocator_t      system memory allocator core::default_allocator, core::virtual_allocator or user defined allocator.
+ *
 */
 template< typename data_t, typename data_size_t, 
           data_size_t chunk_size = 1024, data_size_t initial_size = chunk_size, data_size_t size_limit = 0,
@@ -68,7 +82,6 @@ public:
 
   static constexpr const size_type         value_type_size  = sizeof(value_type);
   static lookup_table_type                 instances_table;
-
 
 private:
   /***/
@@ -157,7 +170,7 @@ public:
       if ( add_mem_chuck() == false )
       { break; }
     }
-
+    
     if ( alloc_threshold > 0 )
     {
       _th_alloc = new std::thread( []( arena_allocator* pArena ){ 
@@ -167,7 +180,7 @@ public:
 
                                                                     if ( pArena->_th_alloc_exit.load(std::memory_order_acquire) == true  )
                                                                       break;
-
+                                                                    
                                                                     if (( pArena->max_length() < size_limit ) || (size_limit == 0))
                                                                     {
                                                                       if ( pArena->add_mem_chuck( ) == false )
@@ -210,12 +223,16 @@ public:
   { return value_type_size; }
 
   /**
-   * @brief Retrieve length in terms of items currently in the buffer.
+   * @brief Retrieve length in terms of items currently used.
    * 
-   * @return current items in the data buffer. 
+   * @return current number of items in use. 
    */
   constexpr inline size_type  length() const noexcept
-  { return _max_length.load( std::memory_order_relaxed )-_free_slots.load( std::memory_order_relaxed ); }
+  { 
+    int64_t max_length = _max_length.load( std::memory_order_acquire );
+    int64_t free_slots = _free_slots.load( std::memory_order_acquire );
+    return max_length-free_slots; 
+  }
 
   /**
    * @brief Return max lenght for this arena_allocator.
@@ -223,7 +240,7 @@ public:
    * @return max number of items accordingly with @tparam items. 
    */
   constexpr inline size_type  max_length() const noexcept
-  { return _max_length.load( std::memory_order_relaxed ); }
+  { return _max_length.load( std::memory_order_acquire ); }
 
   /**
    * @brief  Retrieve the size in bytes currently allocated.
@@ -231,7 +248,7 @@ public:
    * @return current size for the allocated buffer. 
    */
   constexpr inline size_type  capacity() const noexcept
-  { return _capacity.load( std::memory_order_relaxed ); }
+  { return _capacity.load( std::memory_order_acquire ); }
 
   /**
    * @brief Return the largest supported allocation size.
@@ -266,28 +283,31 @@ public:
   { 
     if ( alloc_threshold > 0 ) [[likely]]
     {
-      if ( _free_slots.load( std::memory_order_relaxed ) <= alloc_threshold ) 
+      if ( _free_slots.load( std::memory_order_acquire ) <= alloc_threshold ) 
       { _sem_th_alloc.release(); }
     }
-    else if ( _next_free.load( std::memory_order_relaxed ) == nullptr ) [[unlikely]] // && ( alloc_threshold == 0 ) second part is implicit.
+    else if ( _next_free.load( std::memory_order_acquire ) == nullptr ) [[unlikely]] // && ( alloc_threshold == 0 ) second part is implicit.
     { add_mem_chuck(); } 
+    
+    slot_pointer pCurrSlot = nullptr;
+    for (;;)
+    {
+      pCurrSlot = _next_free.load( std::memory_order_acquire );
+      if ( pCurrSlot == nullptr ) [[unlikely]]
+        return nullptr;
 
-    slot_pointer pCurrSlot = _next_free.load( std::memory_order_acquire );
-    if ( pCurrSlot == nullptr ) [[unlikely]]
-      return nullptr;
-
-    do{
-    } while ( (pCurrSlot) && !_next_free.compare_exchange_weak( pCurrSlot, pCurrSlot->next(), std::memory_order_acq_rel, std::memory_order_acquire ) );
-
-    if ( pCurrSlot == nullptr )
-      return nullptr;
+      if ( _next_free.compare_exchange_weak( pCurrSlot, pCurrSlot->next(), std::memory_order_seq_cst, std::memory_order_relaxed ) == false )
+        continue;
+      
+      break;
+    }
 
     pCurrSlot->set_in_use();
 
     size_type _cur_value = _free_slots.load( std::memory_order_acquire );
     do {
-    } while ( !_free_slots.compare_exchange_weak( _cur_value, _cur_value-1, std::memory_order_acq_rel, std::memory_order_acquire ) );     
-    
+    } while ( !_free_slots.compare_exchange_weak( _cur_value, _cur_value-1, std::memory_order_seq_cst, std::memory_order_acquire ) );     
+
     return new(pCurrSlot->prt()) value_type( std::forward<Args>(args)... );
   }
 
@@ -305,7 +325,7 @@ public:
    *  
    * @param userdata  pointer to user data previously allocated with allocate().
    */
-  constexpr inline void       deallocate( pointer userdata ) noexcept
+  constexpr inline bool       deallocate( pointer userdata ) noexcept
   {
     assert( userdata != nullptr );
 
@@ -315,13 +335,21 @@ public:
     arena_allocator* pArena    = instances_table[pSlot->get_index()];
     slot_pointer     pCurrNext = pArena->_next_free.load( std::memory_order_acquire );
 
+    if ( pSlot->is_free() )
+    {
+      // double free detected 
+      return false;
+    }
+
     do{
       pSlot->set_free( pCurrNext );
-    } while ( !_next_free.compare_exchange_weak( pCurrNext, pSlot, std::memory_order_acq_rel, std::memory_order_acquire ) );
-    
-    size_type _cur_value = _free_slots.load( std::memory_order_acquire );
+    } while ( !pArena->_next_free.compare_exchange_weak( pCurrNext, pSlot, std::memory_order_seq_cst, std::memory_order_acquire ) );
+   
+    size_type _cur_value = pArena->_free_slots.load( std::memory_order_acquire );
     do {
-    } while ( !_free_slots.compare_exchange_weak( _cur_value, _cur_value+1, std::memory_order_acq_rel, std::memory_order_acquire ) );    
+    } while ( !pArena->_free_slots.compare_exchange_weak( _cur_value, _cur_value+1, std::memory_order_seq_cst, std::memory_order_acquire ) );
+
+    return true;
   }
 
   /**
@@ -386,19 +414,28 @@ public:
    *   
    * @param userdata  pointer to user data previously allocated with allocate().
    */
-  constexpr inline void       unsafe_deallocate( pointer userdata ) noexcept
+  constexpr inline bool       unsafe_deallocate( pointer userdata ) noexcept
   {
     assert( userdata != nullptr );
 
     userdata->~value_type();
 
-    slot_pointer  pSlot = memory_slot::slot_from_user_data(userdata);
+    slot_pointer     pSlot  = memory_slot::slot_from_user_data(userdata);
+    arena_allocator* pArena = instances_table[pSlot->get_index()];
 
-    pSlot->set_free( _next_free.load( std::memory_order_relaxed ) );
+    if ( pSlot->is_free() )
+    {
+      // double free detected 
+      return false;
+    }
+
+    pSlot->set_free( pArena->_next_free.load( std::memory_order_relaxed ) );
     
-    _next_free.exchange( pSlot, std::memory_order_relaxed );
+    pArena->_next_free.exchange( pSlot, std::memory_order_relaxed );
 
-    _free_slots.fetch_add( 1, std::memory_order_relaxed );
+    pArena->_free_slots.fetch_add( 1, std::memory_order_relaxed );
+
+    return true;
   }
 
   /**
@@ -491,10 +528,10 @@ public:
     _mem_chunks.clear();
     
     // Update max_length
-    _max_length.store(       0, std::memory_order_relaxed );
-    _free_slots.store(       0, std::memory_order_relaxed );
-    _capacity.store  (       0, std::memory_order_relaxed );
-    _next_free.store ( nullptr, std::memory_order_relaxed );  
+    _max_length.store(       0, std::memory_order_release );
+    _free_slots.store(       0, std::memory_order_release );
+    _capacity.store  (       0, std::memory_order_release );
+    _next_free.store ( nullptr, std::memory_order_release );  
   }
 
 private:
@@ -535,11 +572,11 @@ private:
         _mem_chunks.push_back(_new_mem_chunck);
         
         // Update max_length
-        _max_length.store( chunk_size*_mem_chunks.size(), std::memory_order_relaxed );
-        _free_slots.fetch_add(chunk_size, std::memory_order_relaxed);
+        _max_length.store( chunk_size*_mem_chunks.size(), std::memory_order_release );
+        _free_slots.fetch_add(chunk_size, std::memory_order_acq_rel);
 
         // Update capacity
-        _capacity.store( memory_required_per_chunk*_mem_chunks.size(), std::memory_order_relaxed );
+        _capacity.store( memory_required_per_chunk*_mem_chunks.size(), std::memory_order_release );
 
     // Release _next_free mutex
     _mtx_mem_chunks.unlock();
@@ -600,8 +637,20 @@ private:
     {
       memory_chunk& mc = _mem_chunks.at(ndx);
 
-      std::cout << "[" << ndx << "] _first_slot = " << mc._first_slot << std::endl;
-      std::cout << "[" << ndx << "] _last_slot  = " << mc._last_slot  << std::endl;
+      std::cout << "[" << ndx << "] _first_slot = " << mc._first_slot << " - next =" << mc._first_slot->_ptr_next << std::endl;
+      std::cout << "[" << ndx << "] _last_slot  = " << mc._last_slot  << " - next =" << mc._last_slot->_ptr_next  << std::endl;
+    }
+
+    std::cout << "***************************************" << std::endl;
+    std::cout << "***************************************" << std::endl;
+
+    slot_pointer mem_curs = _mem_chunks.at(0)._first_slot;
+    size_type    slots_nb = 0; 
+    while ( slots_nb++ < chunk_size )
+    {
+      std::cout << "slot [" <<  slots_nb  << "] slot addr [" << mem_curs << "] next [" << mem_curs->next() << "]" << std::endl;
+
+      mem_curs++;
     }
     std::cout << "------------------END------------------" << std::endl;
   }
