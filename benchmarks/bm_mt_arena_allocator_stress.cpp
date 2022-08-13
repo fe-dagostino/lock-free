@@ -99,9 +99,10 @@ static void th_main_alloc_dealloc( uint32_t th_num, uint32_t run_time, lock_free
       if ( pItem == nullptr )
         ++allocation_failures;
       else
+      {
         ++allocation_successes;
-
-      ptr_queue.push(pItem); 
+        ptr_queue.push(pItem); 
+      }
     }
     else if (!ptr_queue.empty())
     {
@@ -181,7 +182,7 @@ int main( int argc, const char* argv[] )
 
   uint32_t nb_threads     = 12;
   uint32_t mon_time_ms    = 1000;
-  uint32_t run_time_ms    = 10000;       // milliseconds
+  uint32_t run_time_ms    = 30000;       // milliseconds
 
   std::vector<std::thread>  vec_alloc_dealloc;
 
