@@ -325,7 +325,7 @@ public:
    *  
    * @param userdata  pointer to user data previously allocated with allocate().
    */
-  [[nodiscard]] constexpr inline core::return_type   deallocate( pointer userdata ) noexcept
+  [[nodiscard]] constexpr inline core::result_t   deallocate( pointer userdata ) noexcept
   {
     assert( userdata != nullptr );
 
@@ -338,7 +338,7 @@ public:
     if ( pSlot->is_free() )
     {
       // double free detected 
-      return core::return_type::eDoubleDelete;
+      return core::result_t::eDoubleDelete;
     }
 
     do{
@@ -349,7 +349,7 @@ public:
     do {
     } while ( !pArena->_free_slots.compare_exchange_weak( _cur_value, _cur_value+1, std::memory_order_seq_cst, std::memory_order_acquire ) );
 
-    return core::return_type::eSuccess;
+    return core::result_t::eSuccess;
   }
 
   /**
@@ -414,7 +414,7 @@ public:
    *   
    * @param userdata  pointer to user data previously allocated with allocate().
    */
-  [[nodiscard]] constexpr inline core::return_type       unsafe_deallocate( pointer userdata ) noexcept
+  [[nodiscard]] constexpr inline core::result_t       unsafe_deallocate( pointer userdata ) noexcept
   {
     assert( userdata != nullptr );
 
@@ -426,7 +426,7 @@ public:
     if ( pSlot->is_free() )
     {
       // double free detected 
-      return core::return_type::eDoubleDelete;
+      return core::result_t::eDoubleDelete;
     }
 
     pSlot->set_free( pArena->_next_free.load( std::memory_order_relaxed ) );
@@ -435,7 +435,7 @@ public:
 
     pArena->_free_slots.fetch_add( 1, std::memory_order_relaxed );
 
-    return core::return_type::eSuccess;
+    return core::result_t::eSuccess;
   }
 
   /**
