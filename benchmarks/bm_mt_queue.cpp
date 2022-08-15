@@ -76,10 +76,10 @@ struct queue_status_t {
 };
 
 
-using lock_free_queue = lock_free::queue<uint32_t,uint32_t, core::ds_impl_t::raw, 10000, 10000, 10 >;
-//using lock_free_queue = lock_free::queue<uint32_t,uint32_t, core::ds_impl_t::mutex, 10000, 10000, 10 >;
-//using lock_free_queue = lock_free::queue<uint32_t,uint32_t, core::ds_impl_t::spinlock, 10000, 10000, 10 >;
-//using lock_free_queue = lock_free::queue<uint32_t,uint32_t, core::ds_impl_t::lockfree, 10000, 10000, 10 >;
+//using lock_free_queue = lock_free::queue<uint32_t,uint32_t, core::ds_impl_t::raw, 10000, 10000, 0 >;
+//using lock_free_queue = lock_free::queue<uint32_t,uint32_t, core::ds_impl_t::mutex, 10000, 10000, 0 >;
+//using lock_free_queue = lock_free::queue<uint32_t,uint32_t, core::ds_impl_t::spinlock, 10000, 10000, 0 >;
+using lock_free_queue = lock_free::queue<uint32_t,uint32_t, core::ds_impl_t::lockfree, 10000, 10000, 0 >;
 using status_queue    = std::queue<queue_status_t>;
 
 
@@ -182,56 +182,6 @@ int main( int argc, const char* argv[] )
   lock_free_queue queue;
   status_queue    mon_queue;
 
-  uint32_t value = 10;
-  queue.push(value);
-  queue.push(20);
-
-
-  std::cout  << (int)queue.lock() << std::endl;
-
-  return 0;
-
-/*
-  uint32_t  value;
-
-  queue.status();
-  
-  std::cout << "1->PUSH(100)\n";
-  queue.push( 100 );
-  std::cout << "2->PUSH(200)\n";
-  queue.push( 200 );
-
-  queue.status();
-
-  queue.pop(value);
-  std::cout << "3->POP(expected 100) - value = " << value << std::endl;
-
-  queue.pop(value);
-  std::cout << "4->POP(expected 200) - value = " << value << std::endl;
-  
-  queue.status();
-
-  std::cout << "5->PUSH(300)\n";
-  queue.push( 300 );
-
-  queue.status();
-
-  queue.pop(value);
-  std::cout << "6->POP(expected 300) - value = " << value << std::endl;
-
-  queue.status();
-
-  if ( queue.pop(value) == false )
-  {
-    std::cout << "7->POP() - failed as expected = " << std::endl; 
-  }else{
-    std::cout << "7->POP() - error - read value = " << value << std::endl;
-  }
-
-  queue.status();
-
-  return 0;
-*/
   uint32_t producers      = 1;
   uint32_t consumers      = 5;
   uint32_t mon_time_ms    = 100;
