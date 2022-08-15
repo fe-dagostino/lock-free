@@ -10,8 +10,10 @@ Current data structures implementations leverage C++20, so in order to build exa
 Actually, the following lock-free data structures have been implemented:
 * [arena_allocator](https://github.com/fe-dagostino/The-Magicians/blob/master/lock-free/arena_allocator/README.md) (*Lock-Free version*) : **`allocate()`** and **`deallocate()`** with a complexity of **`O(1)`**.
 * ring-buffer 
+* [queue](#queue) : this is a generic queue implementation that can be instantiated in one of the following forms: raw, mutex, spinlock, lockfree.
 * multi-queue
 
+---
 ### ring-buffer  **(*not finalize*)**
 
 This implementation leverage the std::array a well specified amount of `slots` where to hold our data.
@@ -20,6 +22,27 @@ This data structure can be shared between multiple threads in both reading and w
 
 This structure can be used in all circumstances where we don't care about the order of execution, this means that each thread can take a different time to process the single `data` unit. 
 
+---
+### queue
+
+What makes this implementation peculiar is the fact that it hides 4 different implementations:
+```cpp
+// Create an instance of for raw queue, no thread safe
+lock_free::queue<uint32_t,uint32_t,core::ds_impl_t::raw>          _queue_raw;
+
+// Create an instance of for a queue protected with std::mutex
+lock_free::queue<uint32_t,uint32_t,core::ds_impl_t::mutex>        _queue_with_mutex;
+
+// Create an instance of for a queue protected with core::mutex
+lock_free::queue<uint32_t,uint32_t,core::ds_impl_t::spinlock>     _queue_with_spinlock;
+
+// Create an instance of for a lock-free queue
+lock_free::queue<uint32_t,uint32_t,core::ds_impl_t::lockfree>     _queue_lock_free;
+```
+
+Each instance, so each specialisation, will contain only needed data members without extra cost in terms of memory or execution, so the RAW implementation will have the best performances since there are no synch mechanisms in such instance.
+
+---
 ### multi-queue  **(*not finalize*)**
 
 I guess there are ton of implementation for lock-free queue and this is one more.
