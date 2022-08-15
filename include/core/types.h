@@ -29,6 +29,8 @@
 #include <type_traits>
 
 #include <mutex>
+#include "core/mutex.h"
+
 #include <thread>
 #include <atomic>
 
@@ -38,12 +40,22 @@ namespace core {
 
 inline namespace LIB_VERSION {
 
-enum class return_type {
-    eFailue          =    0,
+enum class result_t {
+    eFailure         =    0,
     eSuccess         =    1,
 
-    eDoubleDelete    =  100  
+    eEmpty           =    2,
     
+    eDoubleDelete    =  100,
+    
+    eNotImplemented  =  200
+};
+
+enum class ds_impl_t {
+  raw,
+  mutex,
+  spinlock,
+  lockfree
 };
 
 /**
@@ -56,6 +68,35 @@ struct conditional                         { enum : value_type { value = T }; };
 template<typename value_type, value_type T, value_type F>
 struct conditional<value_type,false, T, F> { enum : value_type { value = F }; };
 
+/**
+ * @brief plug an optional mutex in your derived class.
+ * 
+ * @tparam add_mutex whether the mutex should be present or not
+ * @tparam spinlock  true will use a spinklock implementation, false will use std::mutex
+ */
+template<bool add_mutex, bool spinlock>
+struct plug_mutex
+{ 
+  static constexpr const bool has_mutex = true;
+  
+  using mutex_type = std::conditional_t<spinlock,core::mutex,std::mutex>;
+
+  constexpr inline void lock() noexcept
+  {  _mtx.lock(); }
+
+  constexpr inline void unlock() noexcept
+  {  _mtx.unlock(); }
+
+  constexpr inline bool try_lock() noexcept
+  {  return _mtx.try_lock(); }
+
+  mutable mutex_type    _mtx;
+};
+
+template<bool spinlock>
+struct plug_mutex<false,spinlock> { 
+  static constexpr const bool has_mutex = false;
+};
 
 /**
  * @brief forward declaration for node_t, intended for generic usage in queue stack, double linked list
@@ -75,16 +116,15 @@ struct node_t;
  * @brief template structure that will be specialized with a data memeber by default.
  */
 template<typename value_type,bool add_prev,bool add_next, bool use_atomic>
-struct node_t_prev {
+struct plug_prev {
   static constexpr bool has_prev = true;
 
-  node_t_prev()
+  constexpr inline plug_prev()
     : _prev(nullptr)
   {}
   
-  using pointer = node_t<value_type,add_prev,add_next,use_atomic>*;
-
-  typedef std::conditional_t<use_atomic, std::atomic<pointer>, pointer>   node_type;
+  using pointer   = node_t<value_type,add_prev,add_next,use_atomic>*;
+  using node_type = std::conditional_t<use_atomic, std::atomic<pointer>, pointer>;
 
   node_type   _prev;
 };
@@ -93,7 +133,7 @@ struct node_t_prev {
  * @brief specialization for add_prev == false.
  */
 template <typename value_type,bool add_next,bool use_atomic>
-struct node_t_prev<value_type,false,add_next,use_atomic> {
+struct plug_prev<value_type,false,add_next,use_atomic> {
   static constexpr bool has_prev = false;
 };
 
@@ -101,16 +141,15 @@ struct node_t_prev<value_type,false,add_next,use_atomic> {
  * @brief template structure that will be specialized with a data memeber by default.
  */
 template<typename value_type,bool add_prev,bool add_next, bool use_atomic>
-struct node_t_next {
+struct plug_next {
   static constexpr bool has_next = true;
 
-  node_t_next()
+  constexpr inline plug_next()
     : _next(nullptr)
   {}
 
-  using pointer = node_t<value_type,add_prev,add_next,use_atomic>*;
-
-  typedef std::conditional_t<use_atomic, std::atomic<pointer>, pointer>   node_type;
+  using pointer   = node_t<value_type,add_prev,add_next,use_atomic>*;
+  using node_type = std::conditional_t<use_atomic, std::atomic<pointer>, pointer>;
 
   node_type   _next;
 };
@@ -119,7 +158,7 @@ struct node_t_next {
  * @brief specialization for add_next == false.
  */
 template <typename value_type,bool add_prev,bool use_atomic>
-struct node_t_next<value_type,add_prev,false,use_atomic> {
+struct plug_next<value_type,add_prev,false,use_atomic> {
   static constexpr bool has_next = false;    
 };
 
@@ -133,9 +172,13 @@ struct node_t_next<value_type,add_prev,false,use_atomic> {
  *         externalize node_t is workaround.
  */
 template<typename value_type, bool add_prev,bool add_next, bool use_atomic>
-struct node_t : node_t_prev<value_type, add_prev, add_next, use_atomic>, 
-                node_t_next<value_type, add_prev, add_next, use_atomic> 
+struct node_t : plug_prev<value_type, add_prev, add_next, use_atomic>, 
+                plug_next<value_type, add_prev, add_next, use_atomic> 
 {
+  using node_prev_type = plug_prev<value_type,add_prev,add_next,use_atomic>;
+  using node_next_type = plug_next<value_type,add_prev,add_next,use_atomic>;
+  using pointer        = node_t<value_type,add_prev,add_next,use_atomic>*;
+
   /**
    * @brief Default constructor.
    */
@@ -143,14 +186,14 @@ struct node_t : node_t_prev<value_type, add_prev, add_next, use_atomic>,
   { }
 
   /**
-   * @brief Constructor thaht allow to specify rvalue for the node.
+   * @brief Copy Constructor.
    */
   constexpr inline node_t( const value_type& value ) noexcept
     : _data(value)
   { }
 
   /**
-   * @brief Constructor that allow to specify value for the node.
+   * @brief Constructor with move semantic.
    */
   constexpr inline node_t( value_type&& value ) noexcept
     : _data( std::move(value) )
@@ -158,11 +201,39 @@ struct node_t : node_t_prev<value_type, add_prev, add_next, use_atomic>,
 
   /**
    * @brief Destructor.
-   *        Note: deallocation is performed at queue_t level in order to avoid
-   *              stack overflow when deallocating millions of items.
    */
   constexpr inline ~node_t() noexcept
   { }
+
+  /***/
+  constexpr inline pointer get_prev() const
+  { 
+    if constexpr ( node_prev_type::has_prev == true )  // also add_next can be used here.
+    {
+      if constexpr (use_atomic == true )
+      {  return node_prev_type::_prev.load(); }
+
+      if constexpr (use_atomic == false )
+      {  return node_prev_type::_prev; }
+    }
+   
+    return nullptr;
+  }
+
+  /***/
+  constexpr inline pointer get_next() const
+  { 
+    if constexpr ( node_next_type::has_next == true )  // also add_next can be used here.
+    {
+      if constexpr (use_atomic == true )
+      {  return node_next_type::_next.load(); }
+
+      if constexpr (use_atomic == false )
+      {  return node_next_type::_next; }
+    }
+   
+    return nullptr;
+  }
 
   value_type    _data;
 };
