@@ -342,7 +342,7 @@ public:
    *  
    * @param userdata  pointer to user data previously allocated with allocate().
    */
-  [[nodiscard]] constexpr inline return_type       deallocate( pointer userdata ) noexcept
+  [[nodiscard]] constexpr inline result_t       deallocate( pointer userdata ) noexcept
   {
     assert( userdata != nullptr );
 
@@ -354,7 +354,7 @@ public:
     if ( pSlot->is_free() )
     {
       // double free detected 
-      return return_type::eDoubleDelete;
+      return result_t::eDoubleDelete;
     }
 
     do{
@@ -366,7 +366,7 @@ public:
 
     pArena->_mtx_next.unlock();
 
-    return return_type::eSuccess;
+    return result_t::eSuccess;
   }
 
   /**
@@ -429,7 +429,7 @@ public:
    *   
    * @param userdata  pointer to user data previously allocated with allocate().
    */
-  [[nodiscard]] constexpr inline return_type       unsafe_deallocate( pointer userdata ) noexcept
+  [[nodiscard]] constexpr inline result_t       unsafe_deallocate( pointer userdata ) noexcept
   {
     assert( userdata != nullptr );
 
@@ -441,7 +441,7 @@ public:
     if ( pSlot->is_free() )
     {
       // double free detected 
-      return return_type::eDoubleDelete;
+      return result_t::eDoubleDelete;
     }
 
     pSlot->set_free( pArena->_next_free );
@@ -450,7 +450,7 @@ public:
 
     ++pArena->_free_slots;
 
-    return return_type::eSuccess;
+    return result_t::eSuccess;
   }
 
   /**
