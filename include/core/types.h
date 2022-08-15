@@ -81,13 +81,13 @@ struct plug_mutex
   
   using mutex_type = std::conditional_t<spinlock,core::mutex,std::mutex>;
 
-  constexpr inline void lock() noexcept
+  constexpr inline void lock() const noexcept
   {  _mtx.lock(); }
 
-  constexpr inline void unlock() noexcept
+  constexpr inline void unlock() const noexcept
   {  _mtx.unlock(); }
 
-  constexpr inline bool try_lock() noexcept
+  constexpr inline bool try_lock() const noexcept
   {  return _mtx.try_lock(); }
 
   mutable mutex_type    _mtx;
