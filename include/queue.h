@@ -150,7 +150,7 @@ public:
   /**
    * Clear all items from current queue, releasing the memory.
   */
-  constexpr inline void    clear() noexcept
+  constexpr inline void            clear() noexcept
   {
     if constexpr (imp_type==core::ds_impl_t::lockfree)
     {
