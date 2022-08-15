@@ -177,7 +177,9 @@ public:
   {
     if constexpr (plug_mutex_type::has_mutex==true)
     { 
-      plug_mutex_type::lock(); 
+      do{
+      } while ( !plug_mutex_type::try_lock() );
+      
       return core::result_t::eSuccess;
     }
 
