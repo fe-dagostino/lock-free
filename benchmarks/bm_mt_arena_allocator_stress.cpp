@@ -109,7 +109,7 @@ static void th_main_alloc_dealloc( uint32_t th_num, uint32_t run_time, lock_free
       data_item_t* pItem = ptr_queue.front(); 
       ptr_queue.pop();
 
-      if ( arena->deallocate(pItem) != core::return_type::eSuccess )
+      if ( arena->deallocate(pItem) != core::result_t::eSuccess )
         ++deallocation_failures;
       else
         ++deallocation_successes;
@@ -136,7 +136,6 @@ void th_main_monitor( status_queue* mon, uint32_t mon_time, uint32_t run_time, l
 {
   auto th_start_ms = utils::now<std::chrono::milliseconds>();
   
-
   double last_mon  = th_start_ms;
   for (;;)
   {
