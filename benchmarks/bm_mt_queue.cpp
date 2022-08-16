@@ -114,19 +114,31 @@ static void th_main_producer( uint32_t th_num, uint32_t run_time, lock_free_queu
 void th_main_consumer( uint32_t th_num, uint32_t run_time, lock_free_queue* q )
 {
   uint32_t     dit_pop;
-  uint32_t     failures   = 0;
-  uint32_t     successes  = 0;
-  uint32_t     cycles     = 0;
+  uint32_t     got_empty       = 0;
+  uint32_t     got_doublefree  = 0;
+  uint32_t     successes       = 0;
+  uint32_t     cycles          = 0;
 
   auto th_start_ms = utils::now<std::chrono::milliseconds>();
 
   //double last_mon  = th_start_ms;
   for (;;)
   {
-    if ( q->pop(dit_pop) != core::result_t::eSuccess )
-      ++failures;
-    else
-      ++successes;
+    switch (q->pop(dit_pop))
+    {
+      case core::result_t::eEmpty:
+        ++got_empty;
+      break;
+
+      case core::result_t::eDoubleDelete:
+        ++got_doublefree;
+      break;
+    
+      case core::result_t::eSuccess:
+      default:
+        ++successes;
+      break;
+    }
 
     ++cycles;
 
@@ -137,14 +149,17 @@ void th_main_consumer( uint32_t th_num, uint32_t run_time, lock_free_queue* q )
 
   auto th_end_ms = utils::now<std::chrono::milliseconds>();
 
-  std::osyncstream(std::cout) << "C TH [" <<  th_num <<  "] cycles : [" << cycles << "] - successes : [" << successes << "] - failures : [" << failures << "] - duration: " << double(th_end_ms-th_start_ms)/1000 << std::endl;
+  std::osyncstream(std::cout) << "C TH [" <<  th_num <<  "] cycles : [" << cycles 
+                                          << "] - successes : [" << successes 
+                                          << "] - got empty : [" << got_empty 
+                                          << "] - got double free : [" << got_doublefree 
+                                          << "] - duration: " << double(th_end_ms-th_start_ms)/1000 << std::endl;
 }
 
 void th_main_monitor( status_queue* mon, uint32_t mon_time, uint32_t run_time, lock_free_queue* q )
 {
   auto th_start_ms = utils::now<std::chrono::milliseconds>();
   
-
   double last_mon  = th_start_ms;
   for (;;)
   {
