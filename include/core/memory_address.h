@@ -30,6 +30,7 @@
 #include <cstdint>
 
 #include "types.h"
+
 namespace core {
 
 inline namespace LIB_VERSION {
@@ -49,8 +50,8 @@ struct memory_address {
 public:  
   using value_type      = data_t;
   using size_type       = data_size_t;
-  using pointer         = data_t*;
-  using const_pointer   = const data_t*;
+  using pointer         = value_type*;
+  using const_pointer   = const value_type*;
 
   static constexpr const size_type memory_address_size = sizeof(memory_address<value_type,size_type>);
 
@@ -83,6 +84,14 @@ public:
   {}
 
   /***/
+  constexpr inline void   copy_from( const memory_address<value_type,size_type>& memaddr ) noexcept
+  {
+    _addr    = memaddr._addr;
+    _flags   = memaddr._flags;
+    _counter = memaddr._counter;
+  }
+
+  /***/
   constexpr inline void   reset( pointer ptr, base_t flags = 0, base_t counter = 0 ) noexcept
   {
     _addr    = std::bit_cast<base_t>(ptr);
@@ -93,43 +102,94 @@ public:
   /***/  
   constexpr inline operator pointer() const noexcept
   { return std::bit_cast<pointer>(_addr); }
-
-  /***/
-  constexpr inline base_t get_address() const noexcept 
+  /***/  
+  constexpr inline pointer  operator->() const noexcept
   { return std::bit_cast<pointer>(_addr); }
 
   /***/
-  constexpr inline void   set_address( pointer ptr ) noexcept
+  constexpr inline pointer  get_address() const noexcept 
+  { return std::bit_cast<pointer>(_addr); }
+
+  /***/
+  constexpr inline void     set_address( pointer ptr ) noexcept
   { _addr    = std::bit_cast<base_t>(ptr); }
 
   /***/
-  constexpr inline base_t flags() const noexcept 
+  constexpr inline base_t   flags() const noexcept 
   { return _flags; }
 
   /***/
-  constexpr inline bool   test_flag( address_flags flag ) const noexcept 
+  constexpr inline bool     test_flag( address_flags flag ) const noexcept 
   { return (_flags & (base_t)flag); }
 
   /***/
-  constexpr inline void   set_flag( address_flags flag ) noexcept
+  constexpr inline void     set_flag( address_flags flag ) noexcept
   { _flags |= (base_t)flag; }
 
   /***/
-  constexpr inline void   unset_flag( address_flags flag ) noexcept
+  constexpr inline void     unset_flag( address_flags flag ) noexcept
   { _flags &= ~(base_t)flag; }
   
   /***/
-  constexpr inline base_t get_counter() const noexcept 
+  constexpr inline base_t   get_counter() const noexcept 
   { return _counter; }
 
   /***/
-  constexpr inline void   set_counter( base_t counter ) noexcept 
+  constexpr inline void     set_counter( base_t counter ) noexcept 
   { _counter = counter; }
+
+  /***/
+  constexpr inline void     add_counter( base_t value ) noexcept 
+  { _counter += value; }
+  /***/
+  constexpr inline void     sub_counter( base_t value ) noexcept 
+  { _counter -= value; }
 
 private:
   base_t   _addr    : conditional<size_type,(sizeof(pointer)==8), 48, 32>::value;
   base_t   _flags   : conditional<size_type,(sizeof(pointer)==8),  4,  4>::value;
   base_t   _counter : conditional<size_type,(sizeof(pointer)==8), 12, 28>::value;
+};
+
+template< typename data_t, typename data_size_t>
+requires std::is_unsigned_v<data_size_t> 
+         && ((sizeof(data_t*)==4) || (sizeof(data_t*)==8))
+class double_memory_address
+{
+public:  
+  using value_type      = data_t;
+  using size_type       = data_size_t;
+  using pointer         = value_type*;
+  using addreess_type   = memory_address<value_type,size_type>;
+
+  static constexpr const size_type memory_address_size = sizeof(double_memory_address<value_type,size_type>);
+
+  /***/
+  constexpr inline double_memory_address() noexcept
+    : _addr1(), _addr2()
+  {}
+  /***/
+  constexpr inline double_memory_address( pointer ptr1, pointer ptr2 ) noexcept
+    : _addr1(ptr1), _addr2(ptr2)
+  { }
+  /***/
+  constexpr inline double_memory_address( const addreess_type& addr1, const addreess_type& addr2 ) noexcept
+  {
+    _addr1.copy_from( addr1 ) ;
+    _addr2.copy_from( addr2 ) ;
+  }
+
+  /***/
+  constexpr inline addreess_type& get_addr1() noexcept
+  { return _addr1; }
+  /***/
+  constexpr inline addreess_type& get_addr2() noexcept
+  { return _addr2; }
+
+protected:
+  addreess_type  _addr1;
+  addreess_type  _addr2;
+
 };
 
 } // namespace LIB_VERSION 
