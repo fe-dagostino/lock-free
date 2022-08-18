@@ -74,12 +74,12 @@ struct conditional<value_type,false, T, F> { enum : value_type { value = F }; };
  * @tparam add_mutex whether the mutex should be present or not
  * @tparam spinlock  true will use a spinklock implementation, false will use std::mutex
  */
-template<bool add_mutex, bool spinlock>
+template<bool add_mutex, typename mutex_t = core::mutex>
 struct plug_mutex
 { 
   static constexpr const bool has_mutex = true;
   
-  using mutex_type = std::conditional_t<spinlock,core::mutex,std::mutex>;
+  using mutex_type = mutex_t;
 
   constexpr inline void lock() const noexcept
   {  _mtx.lock(); }
@@ -93,8 +93,8 @@ struct plug_mutex
   mutable mutex_type    _mtx;
 };
 
-template<bool spinlock>
-struct plug_mutex<false,spinlock> { 
+template<typename mutex_t>
+struct plug_mutex<false,mutex_t> { 
   static constexpr const bool has_mutex = false;
 };
 
