@@ -69,12 +69,24 @@ template<typename value_type, value_type T, value_type F>
 struct conditional<value_type,false, T, F> { enum : value_type { value = F }; };
 
 /**
+ * @brief Define concept for mutex interface in order.
+ */
+template <typename M>
+concept mutex_interface = requires( M& m ) 
+{
+  { m.lock()     };
+  { m.unlock()   };
+  { m.try_lock() } -> std::same_as<bool>;
+};
+
+/**
  * @brief plug an optional mutex in your derived class.
  * 
  * @tparam add_mutex whether the mutex should be present or not
  * @tparam spinlock  true will use a spinklock implementation, false will use std::mutex
  */
 template<bool add_mutex, typename mutex_t = core::mutex>
+requires mutex_interface<mutex_t>
 struct plug_mutex
 { 
   static constexpr const bool has_mutex = true;
