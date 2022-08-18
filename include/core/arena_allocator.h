@@ -80,6 +80,7 @@ public:
   using const_pointer     = const data_t*;
   using allocator_type    = allocator_t;
   using lookup_table_type = core::fixed_lookup_table<arena_allocator*,size_type,max_instances_per_type,nullptr>;
+  using mutex_type        = core::mutex;
 
   static constexpr const size_type         value_type_size  = sizeof(value_type);
   static lookup_table_type                 instances_table;
@@ -663,7 +664,7 @@ private:
   size_type                   _free_slots;
   size_type                   _capacity;
 
-  mutable mutex               _mtx_next;
+  mutable mutex_type          _mtx_next;
 
   std::thread*                _th_alloc;
   std::binary_semaphore       _sem_th_alloc; 
