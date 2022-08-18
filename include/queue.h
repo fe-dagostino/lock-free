@@ -69,7 +69,7 @@ template<typename data_t, typename data_size_t, core::ds_impl_t imp_type,
 requires std::is_unsigned_v<data_size_t> && (std::is_same_v<data_size_t,u_int32_t> || std::is_same_v<data_size_t,u_int64_t>)
          && ( ((sizeof(data_t) % alignof(std::max_align_t)) == 0 ) || ((sizeof(std::max_align_t) % alignof(data_t)) == 0 ) )
          && (chunk_size >= 1)
-class queue : core::plug_mutex<(imp_type==core::ds_impl_t::mutex)||(imp_type==core::ds_impl_t::spinlock), (imp_type==core::ds_impl_t::spinlock)>
+class queue : core::plug_mutex<(imp_type==core::ds_impl_t::mutex)||(imp_type==core::ds_impl_t::spinlock), std::conditional_t<(imp_type==core::ds_impl_t::spinlock),core::mutex,std::mutex>>
 {
 public:
   using value_type      = data_t; 
@@ -79,7 +79,7 @@ public:
   using pointer         = data_t*;
   using const_pointer   = const data_t*;
   using node_type       = core::node_t<data_t,false,true,(imp_type==core::ds_impl_t::lockfree)>;
-  using plug_mutex_type = core::plug_mutex<(imp_type==core::ds_impl_t::mutex)||(imp_type==core::ds_impl_t::spinlock), (imp_type==core::ds_impl_t::spinlock)>;
+  using plug_mutex_type = core::plug_mutex<(imp_type==core::ds_impl_t::mutex)||(imp_type==core::ds_impl_t::spinlock), std::conditional_t<(imp_type==core::ds_impl_t::spinlock),core::mutex,std::mutex> >;
   using node_pointer    = std::conditional_t<(imp_type==core::ds_impl_t::lockfree),std::atomic<node_type*>,node_type*>;
   using arena_type      = arena_t;
 
@@ -385,4 +385,4 @@ private:
 
 }
 
-#endif //LOCK_FREE_QUEUE_H
+#endif // LOCK_FREE_QUEUE_H
