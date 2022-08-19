@@ -20,10 +20,10 @@ endif()
 
 add_executable( arena_allocator              arena_allocator.cpp    )
 add_executable( rbuffer                      rbuffer.cpp            )
-#add_executable( mqueue                       mqueue.cpp             )
+add_executable( mqueue                       mqueue.cpp             )
 
 
 target_link_libraries( arena_allocator                ${DEFAULT_LIBRARIES}   )
 target_link_libraries( rbuffer                        ${DEFAULT_LIBRARIES}   )
-#target_link_libraries( mqueue                         ${DEFAULT_LIBRARIES}   )
+target_link_libraries( mqueue                         ${DEFAULT_LIBRARIES}   )
 
