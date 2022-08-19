@@ -45,23 +45,23 @@ struct data_item_t {
   
   data_item_t() noexcept
   {
-    for ( u_int32_t i = 0; i < 12; i++ )
+    for ( uint32_t i = 0; i < 12; i++ )
       data[i]=i;
   }
 
-  data_item_t( u_int32_t value ) noexcept
+  data_item_t( uint32_t value ) noexcept
   {
-    for ( u_int32_t i = 0; i < 12; i++ )
+    for ( uint32_t i = 0; i < 12; i++ )
       data[i]=value;
   }
 
   ~data_item_t() noexcept
   {
-    for ( u_int32_t i = 0; i < 12; i++ )
+    for ( uint32_t i = 0; i < 12; i++ )
       data[i]=0;
   }
 
-  u_int32_t  data[12];
+  uint32_t  data[12];
 };
 
 /**
@@ -88,8 +88,8 @@ int main( int argc, const char* argv[] )
   const uint32_t    c_max_repeat           = 50;
   double            c_th_results[c_th_max][c_th_max];
 
-  lock_free::arena_allocator<data_item_t,u_int32_t,c_pre_items,c_pre_items*c_th_max, 0, 0 >   arena_lock_free;
-  core::arena_allocator<data_item_t,u_int32_t,c_pre_items,c_pre_items*c_th_max, 0, 0 >        arena_mutex;
+  lock_free::arena_allocator<data_item_t,uint32_t,c_pre_items,c_pre_items*c_th_max, 0, 0 >   arena_lock_free;
+  core::arena_allocator<data_item_t,uint32_t,c_pre_items,c_pre_items*c_th_max, 0, 0 >        arena_mutex;
 
   data_item_t** arrItems = new data_item_t* [c_th_max*c_pre_items];
 
@@ -117,14 +117,14 @@ int main( int argc, const char* argv[] )
               {
                 if ( c_option == "system" )
                 {
-                  for ( u_int32_t i = 0; i < adj_pre_items; ++i )
+                  for ( uint32_t i = 0; i < adj_pre_items; ++i )
                   {
                     arrItems[(thread_ndx*c_pre_items)+i] = new data_item_t(i);
                     if ( arrItems[(thread_ndx*c_pre_items)+i] == nullptr )
                     { ++fail_count; }                  
                   }
 
-                  for ( u_int32_t i = 0; i < adj_pre_items; ++i )
+                  for ( uint32_t i = 0; i < adj_pre_items; ++i )
                   {
                     if ( arrItems[(thread_ndx*c_pre_items)+i] != nullptr )
                     { delete arrItems[(thread_ndx*c_pre_items)+i]; }
@@ -132,14 +132,14 @@ int main( int argc, const char* argv[] )
                 } 
                 else if ( c_option == "core")
                 {
-                  for ( u_int32_t i = 0; i < adj_pre_items; ++i )
+                  for ( uint32_t i = 0; i < adj_pre_items; ++i )
                   {
                     arrItems[(thread_ndx*c_pre_items)+i] = arena_mutex.allocate(i);
                     if ( arrItems[(thread_ndx*c_pre_items)+i] == nullptr )
                     { ++fail_count; }
                   }
 
-                  for ( u_int32_t i = 0; i < adj_pre_items; ++i )
+                  for ( uint32_t i = 0; i < adj_pre_items; ++i )
                   { 
                     if ( arrItems[(thread_ndx*c_pre_items)+i] != nullptr )
                     { (void)arena_mutex.deallocate(arrItems[(thread_ndx*c_pre_items)+i]); }
@@ -147,14 +147,14 @@ int main( int argc, const char* argv[] )
                 }
                 else //if ( c_option == "lock-free" )
                 {
-                  for ( u_int32_t i = 0; i < adj_pre_items; ++i )
+                  for ( uint32_t i = 0; i < adj_pre_items; ++i )
                   {
                     arrItems[(thread_ndx*c_pre_items)+i] = arena_lock_free.allocate(i);
                     if ( arrItems[(thread_ndx*c_pre_items)+i] == nullptr )
                     { ++fail_count; }
                   }
 
-                  for ( u_int32_t i = 0; i < adj_pre_items; ++i )
+                  for ( uint32_t i = 0; i < adj_pre_items; ++i )
                   {
                     if ( arrItems[(thread_ndx*c_pre_items)+i] != nullptr )
                     { (void)arena_lock_free.deallocate(arrItems[(thread_ndx*c_pre_items)+i]); }

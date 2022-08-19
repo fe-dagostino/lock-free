@@ -14,23 +14,23 @@ struct data_item_t {
   
   constexpr data_item_t() noexcept
   {
-    for ( u_int32_t i = 0; i < 12; i++ )
+    for ( uint32_t i = 0; i < 12; i++ )
       data[i]=i;
   }
 
-  constexpr data_item_t( u_int32_t value ) noexcept
+  constexpr data_item_t( uint32_t value ) noexcept
   {
-    for ( u_int32_t i = 0; i < 12; i++ )
+    for ( uint32_t i = 0; i < 12; i++ )
       data[i]=value;
   }
 
   constexpr ~data_item_t() noexcept
   {
-    for ( u_int32_t i = 0; i < 12; i++ )
+    for ( uint32_t i = 0; i < 12; i++ )
       data[i]=0;
   }
 
-  u_int32_t  data[12];
+  uint32_t  data[12];
 };
 
 /**
@@ -44,8 +44,8 @@ int main( int argc, const char* argv[] )
 
   const uint32_t c_pre_items = 1000000;
   
-  lock_free::arena_allocator<data_item_t,u_int32_t,c_pre_items,c_pre_items, 0, 0 >   arena_lock_free;
-  core::arena_allocator<data_item_t,u_int32_t,c_pre_items,c_pre_items, 0, 0 >        arena_mutex;
+  lock_free::arena_allocator<data_item_t,uint32_t,c_pre_items,c_pre_items, 0, 0 >   arena_lock_free;
+  core::arena_allocator<data_item_t,uint32_t,c_pre_items,c_pre_items, 0, 0 >        arena_mutex;
 
   data_item_t* arrItems[c_pre_items];
 
@@ -58,9 +58,9 @@ int main( int argc, const char* argv[] )
   .batch(c_pre_items)
   .run("Using new and delete", [&] {
 
-        for ( u_int32_t i = 0; i < c_pre_items; ++i )
+        for ( uint32_t i = 0; i < c_pre_items; ++i )
           arrItems[i] = new data_item_t(i);
-        for ( u_int32_t i = 0; i < c_pre_items; ++i )
+        for ( uint32_t i = 0; i < c_pre_items; ++i )
           delete arrItems[i];
 
     });
@@ -72,9 +72,9 @@ int main( int argc, const char* argv[] )
   .batch(c_pre_items)
   .run("Using Lock-Free arena_allocator", [&] {
 
-        for ( u_int32_t i = 0; i < c_pre_items; ++i )
+        for ( uint32_t i = 0; i < c_pre_items; ++i )
           arrItems[i] = arena_lock_free.allocate(i);
-        for ( u_int32_t i = 0; i < c_pre_items; ++i )
+        for ( uint32_t i = 0; i < c_pre_items; ++i )
           (void)arena_lock_free.deallocate(arrItems[i]);
         
     });
@@ -88,9 +88,9 @@ int main( int argc, const char* argv[] )
 
       for ( uint32_t repeat = 0; repeat < 1; ++repeat )
       {
-        for ( u_int32_t i = 0; i < c_pre_items; ++i )
+        for ( uint32_t i = 0; i < c_pre_items; ++i )
           arrItems[i] = arena_lock_free.unsafe_allocate(i);
-        for ( u_int32_t i = 0; i < c_pre_items; ++i )
+        for ( uint32_t i = 0; i < c_pre_items; ++i )
           (void)arena_lock_free.unsafe_deallocate(arrItems[i]);
       }
         
@@ -103,9 +103,9 @@ int main( int argc, const char* argv[] )
   .batch(c_pre_items)
   .run("Using Core arena_allocator", [&] {
 
-        for ( u_int32_t i = 0; i < c_pre_items; ++i )
+        for ( uint32_t i = 0; i < c_pre_items; ++i )
           arrItems[i] = arena_mutex.allocate(i);
-        for ( u_int32_t i = 0; i < c_pre_items; ++i )
+        for ( uint32_t i = 0; i < c_pre_items; ++i )
           (void)arena_mutex.deallocate(arrItems[i]);
         
     });
@@ -119,9 +119,9 @@ int main( int argc, const char* argv[] )
 
       for ( uint32_t repeat = 0; repeat < 1; ++repeat )
       {
-        for ( u_int32_t i = 0; i < c_pre_items; ++i )
+        for ( uint32_t i = 0; i < c_pre_items; ++i )
           arrItems[i] = arena_mutex.unsafe_allocate(i);
-        for ( u_int32_t i = 0; i < c_pre_items; ++i )
+        for ( uint32_t i = 0; i < c_pre_items; ++i )
           (void)arena_mutex.unsafe_deallocate(arrItems[i]);
       }
         

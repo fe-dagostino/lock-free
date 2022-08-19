@@ -47,23 +47,23 @@ struct data_item_t {
   
   constexpr data_item_t() noexcept
   {
-    for ( u_int32_t i = 0; i < 12; i++ )
+    for ( uint32_t i = 0; i < 12; i++ )
       data[i]=i;
   }
 
-  constexpr data_item_t( u_int32_t value ) noexcept
+  constexpr data_item_t( uint32_t value ) noexcept
   {
-    for ( u_int32_t i = 0; i < 12; i++ )
+    for ( uint32_t i = 0; i < 12; i++ )
       data[i]=value;
   }
 
   constexpr ~data_item_t() noexcept
   {
-    for ( u_int32_t i = 0; i < 12; i++ )
+    for ( uint32_t i = 0; i < 12; i++ )
       data[i]=0;
   }
 
-  u_int32_t  data[12];
+  uint32_t  data[12];
 };
 
 struct queue_status_t {
@@ -181,7 +181,7 @@ int main( int argc, const char* argv[] )
 
   uint32_t nb_threads     = 12;
   uint32_t mon_time_ms    = 1000;
-  uint32_t run_time_ms    = 30000;       // milliseconds
+  uint32_t run_time_ms    = 60000;       // milliseconds
 
   std::vector<std::thread>  vec_alloc_dealloc;
 
