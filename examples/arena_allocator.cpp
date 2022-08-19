@@ -13,7 +13,7 @@ struct data_item_t {
     printf("data_item_t()\n");
   }
 
-  data_item_t( u_int32_t value ) noexcept
+  data_item_t( uint32_t value ) noexcept
   {
     data = value;
     printf("data_item_t( %u )\n", value );
@@ -24,7 +24,7 @@ struct data_item_t {
     printf("~data_item_t( %u )\n", data );
   }
 
-  u_int32_t  data;
+  uint32_t  data;
 };
 
 
@@ -42,7 +42,7 @@ int main( int argc, const char* argv[] )
   std::cout << "Start initialization: arena_allocator" << std::endl;
   core::arena_allocator<
                               data_item_t,          // user data type
-                              u_int32_t,            // data type for all counters
+                              uint32_t,            // data type for all counters
                               c_pre_items,          // chunk_size, how many data_item_t in a single chunck of memory.
                               c_pre_items,          // initial_size, number of items to reserve when object is instantiated. 
                               0,                    // 0 means that size can grow until there is available memory 
