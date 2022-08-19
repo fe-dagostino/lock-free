@@ -451,11 +451,11 @@ public:
     if ( userdata == nullptr )
       return false;
 
-    using addr_base_type = core::memory_address<memory_slot,size_type>::base_t;
+    using addr_base_type = typename core::memory_address<memory_slot,size_type>::base_t;
 
     const addr_base_type addr_offset = core::memory_address<memory_slot,size_type>::memory_address_size;
 
-    const std::lock_guard<std::mutex> lock(_mtx_mem_chunks);
+    core::lock_guard<mutex_type> lock(_mtx_mem_chunks);
     for ( auto& mc : _mem_chunks )
     {
       if (
@@ -480,7 +480,7 @@ public:
     if ( userdata == nullptr )
       return false;
 
-    using addr_base_type = core::memory_address<memory_slot,size_type>::base_t;
+    using addr_base_type = typename core::memory_address<memory_slot,size_type>::base_t;
 
     const addr_base_type addr_offset = core::memory_address<memory_slot,size_type>::memory_address_size;
 
@@ -666,16 +666,23 @@ private:
   std::atomic<size_type>      _free_slots;
   std::atomic<size_type>      _capacity;
 
-  mutex_type                  _mtx_mem_chunks;
+  mutable mutex_type          _mtx_mem_chunks;
 
   std::thread*                _th_alloc;
   std::binary_semaphore       _sem_th_alloc; 
   std::atomic_bool            _th_alloc_exit;
 };
 
-template< typename data_t, typename data_size_t, data_size_t chunk_size, data_size_t initial_size, data_size_t size_limit,
-          data_size_t alloc_threshold, typename allocator_t >
-arena_allocator<data_t,data_size_t,chunk_size,initial_size,size_limit,alloc_threshold,allocator_t>::lookup_table_type          
+template< typename data_t, typename data_size_t, 
+          data_size_t chunk_size, data_size_t initial_size, data_size_t size_limit,
+          data_size_t alloc_threshold,
+          typename allocator_t
+        >
+requires std::is_unsigned_v<data_size_t> && (std::is_same_v<data_size_t,u_int32_t> || std::is_same_v<data_size_t,u_int64_t>)
+         && ( ((sizeof(data_t) % alignof(std::max_align_t)) == 0 ) || ((alignof(std::max_align_t) % sizeof(data_t)) == 0 ) )
+         && ( chunk_size > 0 ) && ( initial_size >= chunk_size )
+         && ((sizeof(void*)==4) || (sizeof(void*)==8))         
+typename arena_allocator<data_t,data_size_t,chunk_size,initial_size,size_limit,alloc_threshold,allocator_t>::lookup_table_type          
   arena_allocator<data_t,data_size_t,chunk_size,initial_size,size_limit,alloc_threshold,allocator_t>::instances_table;
 
 } // namespace LIB_VERSION 
