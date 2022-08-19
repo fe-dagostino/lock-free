@@ -8,18 +8,18 @@ using namespace std::chrono_literals;
 
 struct data_item_t {
  
-  constexpr data_item_t() noexcept
+  data_item_t() noexcept
   {
     printf("data_item_t()\n");
   }
 
-  constexpr data_item_t( u_int32_t value ) noexcept
+  data_item_t( u_int32_t value ) noexcept
   {
     data = value;
     printf("data_item_t( %u )\n", value );
   }
 
-  constexpr ~data_item_t() noexcept
+  ~data_item_t() noexcept
   {
     printf("~data_item_t( %u )\n", data );
   }
