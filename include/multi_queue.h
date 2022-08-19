@@ -27,6 +27,11 @@
 #include <array>
 #include <atomic>
 #include <assert.h>
+#include <cstddef>
+
+#include "queue.h"
+#include "core/arena_allocator.h"
+#include "core/thread_map.h"
 
 namespace lock_free {
 
@@ -54,8 +59,10 @@ inline namespace LIB_VERSION {
  *               the single queue.
 */
 template<typename data_t, typename data_size_t, data_size_t queues, 
-         data_size_t chunk_size = 16, data_size_t reserve_size = chunk_size, data_size_t max_size = 0 >
-requires std::is_unsigned_v<data_size_t> && (std::is_same_v<data_size_t,u_int32_t> || std::is_same_v<data_size_t,u_int64_t>)
+         data_size_t chunk_size = 1024, data_size_t reserve_size = chunk_size, data_size_t max_size = 0,
+         typename arena_t = lock_free::arena_allocator<core::node_t<data_t,false,true,true>, data_size_t, chunk_size, reserve_size, max_size, chunk_size / 3, core::default_allocator<data_size_t>> >
+requires std::is_unsigned_v<data_size_t> && (std::is_same_v<data_size_t,uint32_t> || std::is_same_v<data_size_t,uint64_t>)
+         && ( ((sizeof(data_t) % alignof(std::max_align_t)) == 0 ) || ((sizeof(std::max_align_t) % alignof(data_t)) == 0 ) )
          && (queues >= 1) && (chunk_size >= 1)
 class multi_queue
 {
@@ -67,249 +74,7 @@ public:
   using const_reference = const data_t&;
   using pointer         = data_t*;
   using const_pointer   = const data_t*;
- 
-private:
-  /**
-   * @brief A single node for the queue with pointer to next item.
-   *        As for design decision each node_t is indipendent and 
-   *        we pay the cost of this decision in memory allocation time.
-   *        On the other side this keep the code readable and estensible.
-   */
-  struct node_t
-  {
-    /**
-     * @brief Default constructor.
-     */
-    constexpr inline node_t() noexcept
-      : _next{nullptr}
-    { }
-    /**
-     * @brief Constructor taht allow to specify value for the node.
-     */
-    constexpr inline node_t( value_type&& value ) noexcept
-      : _next{nullptr}, _data(value)
-    { }
-    /**
-     * @brief Destructor.
-     *        Note: deallocation is performed at queue_t level in order to avoid
-     *              stack overflow when deallocating millions of items.
-     */
-    constexpr inline ~node_t() noexcept
-    { }
-
-    /**
-     * @brief Overloading operator new.
-     */
-    constexpr inline void * operator new(size_t size) noexcept
-    { return aligned_alloc( alignof(node_t), size ); }
-    /**
-     * @brief Overloading operator new.
-     */
-    constexpr inline void * operator new(size_t size, [[maybe_unused]] const std::nothrow_t& nothrow_value) noexcept
-    { return aligned_alloc( alignof(node_t), size ); }
-    /**
-     * @brief Overloading operator new.
-     */
-    constexpr inline void* operator new ( [[maybe_unused]] std::size_t size, void* ptr) noexcept
-    { return ptr; }
-    /**
-     * @brief Overloading operator delete.
-     */
-    constexpr inline void operator delete(void * ptr) noexcept
-    { free(ptr); }
-
-    std::atomic<node_t*>   _next;
-    value_type             _data;
-  };
-
-
-  /**
-   * @brief Internal data structure for a queue.
-   *        Each single queue is lock-free and can be shared
-   *        between multiple threads.
-   *        This is a design assumption that impact on runtime
-   *        speed but on the other side let open to different use
-   *        cases. 
-   */
-  struct queue_t
-  {
-    constexpr inline queue_t()
-      : _items{0}, _head{nullptr}, _tail{nullptr}, _buff{nullptr}
-    {
-      reserve(reserve_size);
-    }
-
-    constexpr inline ~queue_t() noexcept
-    {
-      clear();
-    }
-
-    /***/
-    constexpr inline size_type size() const noexcept
-    { return _items.load(std::memory_order_acquire); }
-
-    /***/
-    template<typename value_type>
-    constexpr inline bool push( value_type&& data ) noexcept
-    {
-      //node_t* new_node = new(std::nothrow) node_t(data);
-      node_t* new_node = create_node(data);
-      if ( new_node == nullptr )
-        return false;
-
-      node_t* old_tail = _tail.exchange( new_node, std::memory_order_seq_cst );
-
-      if (old_tail == nullptr)
-      {
-        // old_tail == nullptr means that queue is empty, so in this 
-        // case we also exchange current head with current node since
-        // current node is the only one in the queue then both head and tail.
-        _head.exchange( new_node, std::memory_order_seq_cst );
-      }
-      else
-      {
-        old_tail->_next.exchange( new_node, std::memory_order_seq_cst );
-      }
-
-      ++_items;
-
-      return true;
-    }
-
-    /***/
-    constexpr inline bool      pop( value_type& data ) noexcept
-    {
-      node_t* cur_head = _head.load( std::memory_order_acquire );
-
-      // Specified queue is empty.
-      if ( cur_head == nullptr )
-        return false;
-
-      node_t* old_head = cur_head;
-      if ( _head.compare_exchange_strong( cur_head, cur_head->_next.load(std::memory_order_acquire) ) == false )
-        return false;
-
-      data = old_head->_data;
-      destroy_node(old_head);
-      
-      --_items;
-
-      return true;
-    }
-
-    /**
-     * @brief Create a node object retrieving it from preallocated nodes and
-     *        if required allocate a new chunck of nodes.
-     * 
-     * @param data  data to push in the queue.
-     * @return constexpr node_t*  return a pointer to the node with 'data' and 'next' initialized. 
-     */
-    template<typename value_type>
-    constexpr inline node_t* create_node ( value_type& data ) noexcept
-    {  
-      node_t* new_node = nullptr;
-      while ( !(new_node = _buff.load( std::memory_order_acquire )) )
-      {
-        reserve(chunk_size);
-      }
-
-      if ( _buff.compare_exchange_strong( new_node, new_node->_next, std::memory_order_release ) == false )
-        return nullptr;
-
-      // Call operator new using pre-allocated memory.
-      new_node = new(new_node) node_t(data);
-
-      return new_node; 
-    }
-
-    /**
-     * @brief Make specified node available for future use.
-     * 
-     * @param node  pointer to node to be used from create_node()
-     */
-    constexpr inline void    destroy_node( node_t* node ) noexcept
-    {  
-      node_t* buff_node = _buff.exchange( node, std::memory_order_seq_cst );
-      node->_next = buff_node;      
-    }
-
-    /**
-     * @brief Reserve a specified number of items on the queue
-     * 
-     * @param items     number of items to be reserved.
-     * @return true     in case of successfull
-     * @return false    in case of out-of-memory or if size() reach max_size
-     */
-    constexpr inline bool    reserve( size_type items ) noexcept
-    {
-      if (items == 0) 
-        return false;
-      
-      if (max_size>0)
-      { 
-        if ( size() >= max_size)
-          return false;
-      }
-
-      node_t* new_buff  = new(std::nothrow) node_t();
-      node_t* cur_next  = new_buff;
-      while (items--)
-      {
-        cur_next->_next = new(std::nothrow) node_t();
-        if (cur_next->_next == nullptr)
-        {
-          return false;
-        }
-
-        cur_next = cur_next->_next;
-      }
-
-      node_t* buff_node = _buff.exchange( new_buff, std::memory_order_seq_cst );
-      if ( buff_node != nullptr )
-      { release(buff_node); }
-
-      return true;
-    }
-
-    /**
-     * Clear all items from current queue, releasing the memory.
-    */
-    constexpr inline void    clear() noexcept
-    {
-      _tail.store( nullptr, std::memory_order_release );
-
-      node_t* head_cursor = _head.exchange(nullptr, std::memory_order_acq_rel); 
-      release( head_cursor );
-
-      node_t* buff_cursor = _buff.exchange(nullptr, std::memory_order_acq_rel); 
-      release( buff_cursor );
-
-      _items = 0;
-    }
-  
-    /**
-     * Delete all items linked to the first @param node releasing memory.
-    */
-    constexpr inline void    release( node_t* node ) noexcept
-    {
-      node_t* cur_node = nullptr;
-      while ( node != nullptr )
-      {
-        cur_node = node;
-        node = cur_node->_next;
-
-        delete cur_node;
-      }
-    }
-
-    std::atomic<size_type>    _items;
-    std::atomic<node_t*>      _head;
-    std::atomic<node_t*>      _tail;
-    std::atomic<node_t*>      _buff;
-  };
-
-  static constexpr const size_type data_type_size = sizeof(value_type);
-  static constexpr const size_type node_type_size = sizeof(node_t);
+  using queue_type      = lock_free::queue<value_type,size_type, core::ds_impl_t::lockfree, chunk_size,reserve_size,max_size,arena_t>; 
 
 public:
   /**
@@ -321,8 +86,8 @@ public:
 
   /**
    * Clear the structure releasing all allocated memory.
-  */
-  constexpr inline void      clear() noexcept
+   */
+  constexpr inline void            clear() noexcept
   { 
     for( auto & queue : m_array ) 
       queue.clear(); 
@@ -333,7 +98,7 @@ public:
    * 
    * @return constexpr size_type total items accross all iternal queues.
    */
-  constexpr inline size_type size() const noexcept
+  constexpr inline size_type       size() const noexcept
   { 
     size_type _size = 0;
     for( auto & queue : m_array ) 
@@ -347,7 +112,7 @@ public:
    * @param id  specify the queue-id.
    * @return constexpr size_type   number of items for the specified queue.
    */
-  constexpr inline size_type size( const queue_id& id ) const noexcept
+  constexpr inline size_type       size( const queue_id& id ) const noexcept
   { 
     assert( (id >=0) && (id < queues) );
     return m_array[id].size(); 
@@ -363,12 +128,28 @@ public:
    * @return false if queue failed to allocate memory or the queue reaches the max_size
    */
   template<typename value_type>
-  constexpr inline bool      push( const queue_id& id, value_type&& data ) noexcept
+  constexpr inline core::result_t  push( const queue_id& id, value_type&& data ) noexcept
   {
     assert( (id >=0) && (id < queues) );
     return m_array[id].push( std::forward<value_type>(data) );
   }
- 
+
+  /**
+   * @brief Push data in a queue. Destination queue depends on thread::id.
+   * 
+   * @tparam value_type 
+   * @param data   data to push over the queue.
+   * @return true  if operation will be successfully completed.
+   * @return false if queue failed to allocate memory or the queue reaches the max_size   
+   */
+  template<typename value_type>
+  constexpr inline core::result_t  push( value_type&& data ) noexcept
+  {
+    const queue_id id = m_th_map.add()%queues;
+    assert( (id >=0) && (id < queues) );
+    return m_array[id].push( std::forward<value_type>(data) );
+  }
+  
   /**
    * @brief Pop item from specified queue-id.
    * 
@@ -377,7 +158,7 @@ public:
    * @return true   in this case @param data is updated with extracted value from the queue.
    * @return false  queue is empty.
    */
-  constexpr inline bool      pop( const queue_id& id, value_type& data ) noexcept
+  constexpr inline core::result_t  pop( const queue_id& id, value_type& data ) noexcept
   {
     assert( (id >=0) && (id < queues) );
     return m_array[id].pop( data );
@@ -390,7 +171,7 @@ public:
    * @return true  in this case @param data is updated with extracted value from the selected queue queue.
    * @return false selected queue is empty, but this doesn't means that all queues are empty.
    */
-  constexpr inline bool      pop( value_type& data ) noexcept
+  constexpr inline core::result_t  pop( value_type& data ) noexcept
   { 
     size_type qid = m_ndx_pop.load( std::memory_order_acquire );
     m_ndx_pop.compare_exchange_strong( qid, ((qid+1)<queues)?(qid+1):0 );
@@ -400,8 +181,9 @@ public:
 protected:
 
 private:
-  std::array<queue_t, queues>  m_array;
-  std::atomic<size_type>       m_ndx_pop;
+  core::thread_map<size_type,0>   m_th_map; 
+  std::array<queue_type, queues>  m_array;
+  std::atomic<size_type>          m_ndx_pop;
 };
 
 } // namespace LIB_VERSION 
