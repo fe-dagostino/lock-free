@@ -63,7 +63,7 @@ template< typename data_t, typename data_size_t,
           data_size_t alloc_threshold = (chunk_size / 10),
           typename allocator_t = core::default_allocator<data_size_t>
         > 
-requires std::is_unsigned_v<data_size_t> && (std::is_same_v<data_size_t,u_int32_t> || std::is_same_v<data_size_t,u_int64_t>)
+requires std::is_unsigned_v<data_size_t> && (std::is_same_v<data_size_t,uint32_t> || std::is_same_v<data_size_t,uint64_t>)
          && ( ((sizeof(data_t) % alignof(std::max_align_t)) == 0 ) || ((alignof(std::max_align_t) % sizeof(data_t)) == 0 ) )
          && ( chunk_size > 0 ) && ( initial_size >= chunk_size )
          && ((sizeof(void*)==4) || (sizeof(void*)==8))
@@ -678,7 +678,7 @@ template< typename data_t, typename data_size_t,
           data_size_t alloc_threshold,
           typename allocator_t
         >
-requires std::is_unsigned_v<data_size_t> && (std::is_same_v<data_size_t,u_int32_t> || std::is_same_v<data_size_t,u_int64_t>)
+requires std::is_unsigned_v<data_size_t> && (std::is_same_v<data_size_t,uint32_t> || std::is_same_v<data_size_t,uint64_t>)
          && ( ((sizeof(data_t) % alignof(std::max_align_t)) == 0 ) || ((alignof(std::max_align_t) % sizeof(data_t)) == 0 ) )
          && ( chunk_size > 0 ) && ( initial_size >= chunk_size )
          && ((sizeof(void*)==4) || (sizeof(void*)==8))         

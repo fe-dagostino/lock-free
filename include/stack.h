@@ -66,7 +66,7 @@ inline namespace LIB_VERSION {
 template<typename data_t, typename data_size_t, core::ds_impl_t imp_type, 
          data_size_t chunk_size = 1024, data_size_t reserve_size = chunk_size, data_size_t size_limit = 0,
          typename arena_t = lock_free::arena_allocator<core::node_t<data_t,false,true,false/*(imp_type==core::ds_impl_t::lockfree)*/>, data_size_t, chunk_size, reserve_size, size_limit, (chunk_size / 3), core::default_allocator<data_size_t>> >
-requires std::is_unsigned_v<data_size_t> && (std::is_same_v<data_size_t,u_int32_t> || std::is_same_v<data_size_t,u_int64_t>)
+requires std::is_unsigned_v<data_size_t> && (std::is_same_v<data_size_t,uint32_t> || std::is_same_v<data_size_t,uint64_t>)
          && ( ((sizeof(data_t) % alignof(std::max_align_t)) == 0 ) || ((sizeof(std::max_align_t) % alignof(data_t)) == 0 ) )
          && (chunk_size >= 1)
 class stack : core::plug_mutex<(imp_type==core::ds_impl_t::mutex)||(imp_type==core::ds_impl_t::spinlock), std::conditional_t<(imp_type==core::ds_impl_t::spinlock),core::mutex,std::mutex>>
