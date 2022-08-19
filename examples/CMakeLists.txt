@@ -9,7 +9,7 @@ project( examples
 LINK_DIRECTORIES( ${LIB_BINARY_DIR} )
 
 set(  DEFAULT_LIBRARIES
-      
+      atomic
 )
 
 option(LF_ENABLE_CPPCHECK    "Enable/Disable cppcheck"    OFF)
