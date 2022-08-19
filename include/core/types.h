@@ -250,7 +250,29 @@ struct node_t : plug_prev<value_type, add_prev, add_next, use_atomic>,
   value_type    _data;
 };
 
+/**
+ * @brief Since only gcc updated std::lock_guard to constexpr this 
+ *        class will be used as replacement for std::lock_guard in 
+ *        order to guarantee compatibility with other compilers.
+ * 
+ * @tparam mutex_t   mutex class this mutex_interface requirements.
+ */
+template<typename mutex_t>
+requires mutex_interface<mutex_t> 
+class lock_guard final
+{
+public:
+  /***/
+  constexpr inline lock_guard( mutex_t& mtx )
+    : _mtx(mtx)
+  { _mtx.lock(); }
+  /***/
+  constexpr inline ~lock_guard( )
+  { _mtx.unlock(); }
 
+private:
+  mutex_t& _mtx;
+};
 
 
 } // namespace LIB_VERSION 
