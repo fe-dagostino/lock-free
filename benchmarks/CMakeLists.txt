@@ -32,6 +32,7 @@ FetchContent_MakeAvailable(nanobench)
 
 set(  DEFAULT_LIBRARIES
       nanobench
+      atomic
 )
 
 option(LF_ENABLE_CPPCHECK    "Enable/Disable cppcheck"    OFF)
@@ -43,9 +44,9 @@ endif()
 add_executable( bm_arena_allocator                       bm_arena_allocator.cpp           )
 add_executable( bm_mt_arena_allocator                    bm_mt_arena_allocator.cpp        )
 add_executable( bm_mt_arena_allocator_stress             bm_mt_arena_allocator_stress.cpp )
-#add_executable( bm_mt_queue                              bm_mt_queue.cpp                  )
+add_executable( bm_mt_queue                              bm_mt_queue.cpp                  )
 
 target_link_libraries( bm_arena_allocator                ${DEFAULT_LIBRARIES}         )
 target_link_libraries( bm_mt_arena_allocator             ${DEFAULT_LIBRARIES}         )
 target_link_libraries( bm_mt_arena_allocator_stress      ${DEFAULT_LIBRARIES}         )
-#target_link_libraries( bm_mt_queue                       ${DEFAULT_LIBRARIES}         )
+target_link_libraries( bm_mt_queue                       ${DEFAULT_LIBRARIES}         )
