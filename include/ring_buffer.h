@@ -72,10 +72,6 @@ public:
     : m_ndxWrite( 0 ),m_ndxRead(0),m_counter(0)
   {
     m_array = std::make_unique<std::array<slot_t, items>>();
-    
-    static_assert( m_ndxWrite.is_always_lock_free );
-    static_assert( m_ndxRead.is_always_lock_free  );
-    static_assert( m_counter.is_always_lock_free  );
   }
 
   /***/
