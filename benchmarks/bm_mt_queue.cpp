@@ -1,13 +1,17 @@
 #define ANKERL_NANOBENCH_IMPLEMENT
 #include <nanobench.h>
+#include <assert.h>
 
 #include <iostream>
 #include <syncstream>
 #include <queue>
 
 #include "queue.h"
+#include "stack.h"
 
 using namespace std::chrono_literals;
+
+#include "core/thread_map.h"
 
 class utils
 {
@@ -47,23 +51,23 @@ struct data_item_t {
   
   constexpr data_item_t() noexcept
   {
-    for ( u_int32_t i = 0; i < 14; i++ )
+    for ( uint32_t i = 0; i < 14; i++ )
       data[i]=i;
   }
 
-  constexpr data_item_t( u_int32_t value ) noexcept
+  constexpr data_item_t( uint32_t value ) noexcept
   {
-    for ( u_int32_t i = 0; i < 14; i++ )
+    for ( uint32_t i = 0; i < 14; i++ )
       data[i]=value;
   }
 
   constexpr ~data_item_t() noexcept
   {
-    for ( u_int32_t i = 0; i < 14; i++ )
+    for ( uint32_t i = 0; i < 14; i++ )
       data[i]=0;
   }
 
-  u_int32_t  data[14];
+  uint32_t  data[14];
 };
 
 struct queue_status_t {
@@ -76,10 +80,11 @@ struct queue_status_t {
 };
 
 
-//using lock_free_queue = lock_free::queue<uint32_t,uint32_t, core::ds_impl_t::raw, 10000, 10000, 0 >;
-//using lock_free_queue = lock_free::queue<uint32_t,uint32_t, core::ds_impl_t::mutex, 10000, 10000, 0 >;
-//using lock_free_queue = lock_free::queue<uint32_t,uint32_t, core::ds_impl_t::spinlock, 10000, 10000, 0 >;
-using lock_free_queue = lock_free::queue<uint32_t,uint32_t, core::ds_impl_t::lockfree, 10000, 10000, 0 >;
+//using lock_free_queue = lock_free::queue<uint32_t,uint32_t, core::ds_impl_t::raw, 1000000, 1000000, 0 >;
+//using lock_free_queue = lock_free::queue<uint32_t,uint32_t, core::ds_impl_t::mutex, 1000000, 1000000, 0 >;
+//using lock_free_queue = lock_free::queue<uint32_t,uint32_t, core::ds_impl_t::spinlock, 1000000, 1000000, 0 >;
+//using lock_free_queue = lock_free::queue<uint32_t,uint32_t, core::ds_impl_t::lockfree, 1000000, 1000000, 0 >;
+using lock_free_queue = lock_free::stack<uint32_t,uint32_t, core::ds_impl_t::lockfree, 1000000, 1000000, 1000000 >;
 using status_queue    = std::queue<queue_status_t>;
 
 
@@ -198,8 +203,8 @@ int main( int argc, const char* argv[] )
   status_queue    mon_queue;
 
   uint32_t producers      = 1;
-  uint32_t consumers      = 5;
-  uint32_t mon_time_ms    = 100;
+  uint32_t consumers      = 5;//5;
+  uint32_t mon_time_ms    = 1000;
   uint32_t run_time_ms    = 10000;       // milliseconds
 
   std::vector<std::thread>  vec_producers;
