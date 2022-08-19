@@ -127,6 +127,8 @@ public:
     
     if constexpr (imp_type!=core::ds_impl_t::lockfree)
       return _push_imp_default(data);
+
+    return core::result_t::eNotImplemented;
   }
 
   /**
@@ -145,6 +147,8 @@ public:
     
     if constexpr (imp_type!=core::ds_impl_t::lockfree)
       return _pop_imp_default(data);
+    
+    return core::result_t::eNotImplemented;
   }
 
   /**
