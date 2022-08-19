@@ -64,14 +64,15 @@ if(MSVC)
   add_compile_options(-D_CRT_SECURE_NO_WARNINGS /W4 /WX)
 else()
   # lots of warning
-  add_compile_options(-Wall -Wextra -pedantic )
+  add_compile_options( -march=native -mtune=native -Wall -Wextra -pedantic )
+  add_link_options( -lm -lpthread -latomic )
+  
   set(  EXT_LIBRARIES
-      m
-      pthread
+
   )
   
   if( CMAKE_BUILD_TYPE STREQUAL "Release" )
-  add_compile_options( -O3 -march=native )
+  add_compile_options( -O3 )
   endif()
 endif()
 
