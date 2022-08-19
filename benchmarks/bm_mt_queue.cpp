@@ -83,8 +83,8 @@ struct queue_status_t {
 //using lock_free_queue = lock_free::queue<uint32_t,uint32_t, core::ds_impl_t::raw, 1000000, 1000000, 0 >;
 //using lock_free_queue = lock_free::queue<uint32_t,uint32_t, core::ds_impl_t::mutex, 1000000, 1000000, 0 >;
 //using lock_free_queue = lock_free::queue<uint32_t,uint32_t, core::ds_impl_t::spinlock, 1000000, 1000000, 0 >;
-//using lock_free_queue = lock_free::queue<uint32_t,uint32_t, core::ds_impl_t::lockfree, 1000000, 1000000, 0 >;
-using lock_free_queue = lock_free::stack<uint32_t,uint32_t, core::ds_impl_t::lockfree, 1000000, 1000000, 1000000 >;
+using lock_free_queue = lock_free::queue<uint32_t,uint32_t, core::ds_impl_t::lockfree, 1000000, 1000000, 0 >;
+//using lock_free_queue = lock_free::stack<uint32_t,uint32_t, core::ds_impl_t::lockfree, 1000000, 1000000, 0 >;
 using status_queue    = std::queue<queue_status_t>;
 
 
