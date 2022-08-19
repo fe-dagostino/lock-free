@@ -345,7 +345,8 @@ public:
    */
   [[nodiscard]] constexpr inline result_t       deallocate( pointer userdata ) noexcept
   {
-    assert( userdata != nullptr );
+    if ( userdata == nullptr )
+      return core::result_t::eNullPointer;
 
     userdata->~value_type();
 
@@ -355,7 +356,7 @@ public:
     if ( pSlot->is_free() )
     {
       // double free detected 
-      return result_t::eDoubleDelete;
+      return result_t::eDoubleFree;
     }
 
     do{
@@ -432,7 +433,8 @@ public:
    */
   [[nodiscard]] constexpr inline result_t       unsafe_deallocate( pointer userdata ) noexcept
   {
-    assert( userdata != nullptr );
+    if ( userdata == nullptr )
+      return core::result_t::eNullPointer;
 
     userdata->~value_type();
 
@@ -442,7 +444,7 @@ public:
     if ( pSlot->is_free() )
     {
       // double free detected 
-      return result_t::eDoubleDelete;
+      return result_t::eDoubleFree;
     }
 
     pSlot->set_free( pArena->_next_free );

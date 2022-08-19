@@ -230,9 +230,12 @@ public:
    */
   constexpr inline size_type  length() const noexcept
   { 
-    int64_t max_length = _max_length.load( std::memory_order_acquire );
-    int64_t free_slots = _free_slots.load( std::memory_order_acquire );
-    return max_length-free_slots; 
+    std::atomic_thread_fence( std::memory_order_acquire );
+    int64_t max_length = _max_length.load( std::memory_order_relaxed );
+    int64_t free_slots = _free_slots.load( std::memory_order_relaxed );
+    // Due to concurrency this is necessary due to the fact that a buffer 
+    // can be released before that free_slots will be decreased.
+    return std::max(max_length,free_slots)-std::min(max_length,free_slots); 
   }
 
   /**
@@ -305,9 +308,7 @@ public:
 
     pCurrSlot->set_in_use();
 
-    size_type _cur_value = _free_slots.load( std::memory_order_acquire );
-    do {
-    } while ( !_free_slots.compare_exchange_weak( _cur_value, _cur_value-1, std::memory_order_seq_cst, std::memory_order_acquire ) );     
+    _free_slots.fetch_sub(1, std::memory_order_seq_cst);
 
     return new(pCurrSlot->prt()) value_type( std::forward<Args>(args)... );
   }
@@ -328,27 +329,28 @@ public:
    */
   [[nodiscard]] constexpr inline core::result_t   deallocate( pointer userdata ) noexcept
   {
-    assert( userdata != nullptr );
+    if ( userdata == nullptr )
+      return core::result_t::eNullPointer;
 
     userdata->~value_type();
 
+    std::atomic_thread_fence( std::memory_order_acquire );
+
     slot_pointer     pSlot     = memory_slot::slot_from_user_data(userdata);
     arena_allocator* pArena    = instances_table[pSlot->get_index()];
-    slot_pointer     pCurrNext = pArena->_next_free.load( std::memory_order_acquire );
+    slot_pointer     pCurrNext = pArena->_next_free.load( std::memory_order_relaxed );
 
     if ( pSlot->is_free() )
     {
       // double free detected 
-      return core::result_t::eDoubleDelete;
+      return core::result_t::eDoubleFree;
     }
 
     do{
       pSlot->set_free( pCurrNext );
     } while ( !pArena->_next_free.compare_exchange_weak( pCurrNext, pSlot, std::memory_order_seq_cst, std::memory_order_acquire ) );
    
-    size_type _cur_value = pArena->_free_slots.load( std::memory_order_acquire );
-    do {
-    } while ( !pArena->_free_slots.compare_exchange_weak( _cur_value, _cur_value+1, std::memory_order_seq_cst, std::memory_order_acquire ) );
+    pArena->_free_slots.fetch_add(1, std::memory_order_seq_cst);
 
     return core::result_t::eSuccess;
   }
@@ -417,7 +419,8 @@ public:
    */
   [[nodiscard]] constexpr inline core::result_t       unsafe_deallocate( pointer userdata ) noexcept
   {
-    assert( userdata != nullptr );
+    if ( userdata == nullptr )
+      return core::result_t::eNullPointer;
 
     userdata->~value_type();
 
@@ -427,7 +430,7 @@ public:
     if ( pSlot->is_free() )
     {
       // double free detected 
-      return core::result_t::eDoubleDelete;
+      return core::result_t::eDoubleFree;
     }
 
     pSlot->set_free( pArena->_next_free.load( std::memory_order_relaxed ) );

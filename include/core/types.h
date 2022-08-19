@@ -46,7 +46,8 @@ enum class result_t {
 
     eEmpty           =    2,
     
-    eDoubleDelete    =  100,
+    eNullPointer     =  100,
+    eDoubleFree      =  101,
     
     eNotImplemented  =  200
 };

@@ -332,10 +332,7 @@ private:
       _head = _head->_next;
 
       data = first_node->_data;
-      if ( destroy_node(first_node) == core::result_t::eDoubleDelete )
-      { ret_value = core::result_t::eDoubleDelete; }
-      else
-      { ret_value = core::result_t::eSuccess;      }
+      ret_value = destroy_node(first_node);
 
       if ( _head == nullptr )
         _tail = nullptr;
@@ -368,14 +365,10 @@ private:
     data = old_head->_data;
     old_head->_next = nullptr;
 
-    if ( destroy_node(old_head) == core::result_t::eDoubleDelete )
-    {
-      // old_head have been already released, this may result in 
-      // a logic issue at application level.  
-      return core::result_t::eDoubleDelete;
-    }
-
-    return core::result_t::eSuccess;
+    // if old_head have been already released, this may result in 
+    // a logic issue at application level. 
+    // core::result_t::eDoubleFree will be returned in this case.   
+    return destroy_node(old_head);
   }
 
 private:

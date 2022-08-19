@@ -65,7 +65,7 @@ inline namespace LIB_VERSION {
 */
 template<typename data_t, typename data_size_t, core::ds_impl_t imp_type, 
          data_size_t chunk_size = 1024, data_size_t reserve_size = chunk_size, data_size_t size_limit = 0,
-         typename arena_t = lock_free::arena_allocator<core::node_t<data_t,false,true,false/*(imp_type==core::ds_impl_t::lockfree)*/>, data_size_t, chunk_size, reserve_size, size_limit, (chunk_size / 3), core::default_allocator<data_size_t>> >
+         typename arena_t = lock_free::arena_allocator<core::node_t<data_t,false,true,(imp_type==core::ds_impl_t::lockfree)>, data_size_t, chunk_size, reserve_size, size_limit, (chunk_size / 3), core::default_allocator<data_size_t>> >
 requires std::is_unsigned_v<data_size_t> && (std::is_same_v<data_size_t,uint32_t> || std::is_same_v<data_size_t,uint64_t>)
          && ( ((sizeof(data_t) % alignof(std::max_align_t)) == 0 ) || ((sizeof(std::max_align_t) % alignof(data_t)) == 0 ) )
          && (chunk_size >= 1)
@@ -78,9 +78,9 @@ public:
   using const_reference = const data_t&;
   using pointer         = data_t*;
   using const_pointer   = const data_t*;
-  using node_type       = core::node_t<value_type,false,true,false/*(imp_type==core::ds_impl_t::lockfree)*/>;
+  using node_type       = core::node_t<value_type,false,true,(imp_type==core::ds_impl_t::lockfree)>;
   using plug_mutex_type = core::plug_mutex<(imp_type==core::ds_impl_t::mutex)||(imp_type==core::ds_impl_t::spinlock), std::conditional_t<(imp_type==core::ds_impl_t::spinlock),core::mutex,std::mutex>>;
-  using node_addr_type  = core::memory_address<node_type,size_type>;
+  using node_addr_type  = node_type*;
   using node_pointer    = std::conditional_t<(imp_type==core::ds_impl_t::lockfree),std::atomic<node_addr_type>,node_type*>;
   using arena_type      = arena_t;
 
@@ -267,22 +267,22 @@ private:
     if ( new_node == nullptr )
       return core::result_t::eFailure;
 
-    std::atomic_thread_fence( std::memory_order_acquire );
-    node_addr_type old_head      = _head.load( std::memory_order_relaxed );
     for (;;)
     {
+      std::atomic_thread_fence( std::memory_order_acquire );
+      node_addr_type old_head = _head.load( std::memory_order_relaxed );
       if ( old_head != nullptr )
-        new_node->_next = old_head;
+        new_node->_next.store( old_head, std::memory_order_release );
 
-      node_addr_type new_head( new_node, 0, old_head.get_counter() );
+      node_addr_type new_head( new_node );
 
       if ( _head.compare_exchange_weak( old_head, new_head ) == false )
         continue; // when this fails means that _head have been modified by a different thread, so let's come back to the loop reading the new head.
-      
-      std::atomic_thread_fence( std::memory_order_release );
 
       break;
     }
+
+    std::atomic_thread_fence( std::memory_order_release );
 
     return core::result_t::eSuccess;
   }
@@ -301,10 +301,7 @@ private:
       _head = _head->_next;
 
       data = first_node->_data;
-      if ( destroy_node(first_node) == core::result_t::eDoubleDelete )
-      { ret_value = core::result_t::eDoubleDelete; }
-      else
-      { ret_value = core::result_t::eSuccess;      }
+      ret_value = destroy_node(first_node);
     }
 
     unlock();
@@ -315,35 +312,32 @@ private:
   /***/
   constexpr inline core::result_t     _pop_imp_lockfree( value_type& data ) noexcept
   {
-    std::atomic_thread_fence( std::memory_order_acquire );
-
-    node_addr_type old_head = _head.load( std::memory_order_relaxed );
+    node_addr_type old_head = nullptr;
+    node_addr_type new_head = nullptr;
     for (;;)
     {
+      std::atomic_thread_fence( std::memory_order_acquire );
+      old_head = _head.load( std::memory_order_relaxed );
       if ( old_head == nullptr )
         return core::result_t::eEmpty;
 
-      node_addr_type new_head( old_head->_next, 0, old_head.get_counter()+1 );
+      std::atomic_thread_fence( std::memory_order_acquire );
+      new_head = old_head->_next.load(std::memory_order_relaxed);
 
       if ( _head.compare_exchange_weak( old_head, new_head ) == false )
         continue;
-      
-      std::atomic_thread_fence( std::memory_order_release );
 
       break;
-    }
-    
+    };
+
+    std::atomic_thread_fence( std::memory_order_release );
+
     data = old_head->_data;
-    old_head->_next = nullptr;
 
-    if ( destroy_node(old_head) == core::result_t::eDoubleDelete )
-    {
-      // old_head have been already released, this may result in 
-      // a logic issue at application level.  
-      return core::result_t::eDoubleDelete;
-    }
-
-    return core::result_t::eSuccess;
+    // if old_head have been already released, this may result in 
+    // a logic issue at application level. 
+    // core::result_t::eDoubleFree will be returned in this case.   
+    return destroy_node(old_head);    
   }
 
 private:

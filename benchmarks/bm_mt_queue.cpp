@@ -9,7 +9,7 @@
 
 using namespace std::chrono_literals;
 
-#include "core/thread_map.h"
+//#include "core/thread_map.h"
 
 class utils
 {
@@ -78,12 +78,12 @@ struct queue_status_t {
 };
 
 
-//using lock_free_queue = lock_free::queue<uint32_t,uint32_t, core::ds_impl_t::raw, 1000000, 1000000, 0 >;
-//using lock_free_queue = lock_free::queue<uint32_t,uint32_t, core::ds_impl_t::mutex, 1000000, 1000000, 0 >;
-//using lock_free_queue = lock_free::queue<uint32_t,uint32_t, core::ds_impl_t::spinlock, 1000000, 1000000, 0 >;
-using lock_free_queue = lock_free::queue<uint32_t,uint32_t, core::ds_impl_t::lockfree, 1000000, 1000000, 0 >;
-//using lock_free_queue = lock_free::stack<uint32_t,uint32_t, core::ds_impl_t::lockfree, 1000000, 1000000, 0 >;
-using status_queue    = std::queue<queue_status_t>;
+//using lock_free_queue = typename lock_free::queue<uint32_t,uint32_t, core::ds_impl_t::raw, 1000000, 1000000, 0 >;
+//using lock_free_queue = typename lock_free::queue<uint32_t,uint32_t, core::ds_impl_t::mutex, 1000000, 1000000, 0 >;
+//using lock_free_queue = typename lock_free::queue<uint32_t,uint32_t, core::ds_impl_t::spinlock, 1000000, 1000000, 0 >;
+using lock_free_queue = typename lock_free::queue<uint32_t,uint32_t, core::ds_impl_t::lockfree, 1000000, 1000000, 0 >;
+//using lock_free_queue = typename lock_free::stack<uint32_t,uint32_t, core::ds_impl_t::lockfree, 1000000, 1000000, 0 >;
+using status_queue    = typename std::queue<queue_status_t>;
 
 
 static void th_main_producer( uint32_t th_num, uint32_t run_time, lock_free_queue* q )
@@ -133,7 +133,7 @@ void th_main_consumer( uint32_t th_num, uint32_t run_time, lock_free_queue* q )
         ++got_empty;
       break;
 
-      case core::result_t::eDoubleDelete:
+      case core::result_t::eDoubleFree:
         ++got_doublefree;
       break;
     
