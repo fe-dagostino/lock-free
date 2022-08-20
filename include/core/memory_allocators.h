@@ -46,11 +46,11 @@ public:
   using size_type       = data_size_t;
 
   /***/
-  constexpr inline void* allocate( size_type nb_bytes ) noexcept
+  static constexpr inline void* allocate( const size_type& nb_bytes ) noexcept
   { return (std::aligned_alloc( alignof(std::max_align_t), nb_bytes )); }
 
   /***/
-  constexpr inline void  deallocate( void* ptr, [[maybe_unused]] size_type nb_bytes ) noexcept
+  static constexpr inline void  deallocate( void* ptr, [[maybe_unused]] const size_type& nb_bytes ) noexcept
   { std::free( ptr ); }
 
 };
@@ -63,7 +63,7 @@ public:
   using size_type       = data_size_t;
 
   /***/
-  constexpr inline void* allocate( size_type nb_bytes ) noexcept
+  static constexpr inline void* allocate( const size_type& nb_bytes ) noexcept
 #ifdef _WIN32  
   { return VirtualAlloc(NULL, nb_bytes, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE); }
 #else
@@ -71,7 +71,7 @@ public:
 #endif
 
   /***/
-  constexpr inline void  deallocate( void* ptr, [[maybe_unused]] size_type nb_bytes ) noexcept
+  static constexpr inline void  deallocate( void* ptr, [[maybe_unused]] const size_type& nb_bytes ) noexcept
 #ifdef _WIN32  
   { VirtualFree(reinterpret_cast<void *>(ptr), 0, MEM_RELEASE); }
 #else

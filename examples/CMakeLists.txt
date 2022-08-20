@@ -15,7 +15,17 @@ set(  DEFAULT_LIBRARIES
 option(LF_ENABLE_CPPCHECK    "Enable/Disable cppcheck"    OFF)
 
 if ( LF_ENABLE_CPPCHECK )
-  set(CMAKE_CXX_CPPCHECK "cppcheck")
+  find_program(CMAKE_CXX_CPPCHECK NAMES cppcheck)
+  if (CMAKE_CXX_CPPCHECK)
+      list(
+          APPEND CMAKE_CXX_CPPCHECK
+              "--std=c++20" 
+              "--enable=warning"
+              "--inconclusive"
+              "--force" 
+              "--inline-suppr"
+      )
+  endif()
 endif()
 
 add_executable( arena_allocator              arena_allocator.cpp    )

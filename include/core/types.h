@@ -201,14 +201,14 @@ struct node_t : plug_prev<value_type, add_prev, add_next, use_atomic>,
   /**
    * @brief Copy Constructor.
    */
-  constexpr inline node_t( const value_type& value ) noexcept
+  constexpr inline explicit node_t( const value_type& value ) noexcept
     : _data(value)
   { }
 
   /**
    * @brief Constructor with move semantic.
    */
-  constexpr inline node_t( value_type&& value ) noexcept
+  constexpr inline explicit node_t( value_type&& value ) noexcept
     : _data( std::move(value) )
   { }
 
@@ -264,11 +264,11 @@ class lock_guard final
 {
 public:
   /***/
-  constexpr inline lock_guard( mutex_t& mtx )
+  constexpr inline explicit lock_guard( mutex_t& mtx ) noexcept
     : _mtx(mtx)
   { _mtx.lock(); }
   /***/
-  constexpr inline ~lock_guard( )
+  constexpr inline ~lock_guard( ) noexcept
   { _mtx.unlock(); }
 
 private:

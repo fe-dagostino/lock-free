@@ -75,7 +75,7 @@ public:
     : _addr( std::bit_cast<base_t>(nullptr) ), _flags(0), _counter(0)
   {}
   /***/
-  constexpr inline memory_address( pointer ptr ) noexcept
+  constexpr inline explicit memory_address( pointer ptr ) noexcept
     : _addr( std::bit_cast<base_t>(ptr) ), _flags(0), _counter(0)
   {}  
   /***/
@@ -84,11 +84,11 @@ public:
   {}
 
   /***/
-  constexpr inline void   copy_from( const memory_address<value_type,size_type>& memaddr ) noexcept
+  static constexpr inline void   copy_from( memory_address<value_type,size_type>& to, const memory_address<value_type,size_type>& from ) noexcept
   {
-    _addr    = memaddr._addr;
-    _flags   = memaddr._flags;
-    _counter = memaddr._counter;
+    to._addr    = from._addr;
+    to._flags   = from._flags;
+    to._counter = from._counter;
   }
 
   /***/
@@ -115,35 +115,35 @@ public:
   { _addr    = std::bit_cast<base_t>(ptr); }
 
   /***/
-  constexpr inline base_t   flags() const noexcept 
-  { return _flags; }
+  static constexpr inline base_t   flags( const memory_address<value_type,size_type>& obj ) noexcept 
+  { return obj._flags; }
 
   /***/
-  constexpr inline bool     test_flag( address_flags flag ) const noexcept 
-  { return (_flags & (base_t)flag); }
+  static constexpr inline bool     test_flag( const memory_address<value_type,size_type>& obj, address_flags flag ) noexcept 
+  { return (obj._flags & (base_t)flag); }
 
   /***/
-  constexpr inline void     set_flag( address_flags flag ) noexcept
-  { _flags |= (base_t)flag; }
+  static constexpr inline void     set_flag( memory_address<value_type,size_type>& obj, address_flags flag ) noexcept
+  { obj._flags |= (base_t)flag; }
 
   /***/
-  constexpr inline void     unset_flag( address_flags flag ) noexcept
-  { _flags &= ~(base_t)flag; }
+  static constexpr inline void     unset_flag( memory_address<value_type,size_type>& obj, address_flags flag ) noexcept
+  { obj._flags &= ~(base_t)flag; }
   
   /***/
-  constexpr inline base_t   get_counter() const noexcept 
-  { return _counter; }
+  static constexpr inline base_t   get_counter( const memory_address<value_type,size_type>& obj ) noexcept 
+  { return obj._counter; }
 
   /***/
-  constexpr inline void     set_counter( base_t counter ) noexcept 
-  { _counter = counter; }
+  static constexpr inline void     set_counter( memory_address<value_type,size_type>& obj, base_t counter ) noexcept 
+  { obj._counter = counter; }
 
   /***/
-  constexpr inline void     add_counter( base_t value ) noexcept 
-  { _counter += value; }
+  static constexpr inline void     add_counter( memory_address<value_type,size_type>& obj, base_t value ) noexcept 
+  { obj._counter += value; }
   /***/
-  constexpr inline void     sub_counter( base_t value ) noexcept 
-  { _counter -= value; }
+  static constexpr inline void     sub_counter( memory_address<value_type,size_type>& obj, base_t value ) noexcept 
+  { obj._counter -= value; }
 
 private:
   base_t   _addr    : conditional<size_type,(sizeof(pointer)==8), 48, 32>::value;

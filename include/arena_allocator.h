@@ -92,7 +92,7 @@ private:
       :_ptr_next(nullptr)
     {}
     /***/
-    constexpr inline memory_slot( memory_slot* next ) noexcept
+    constexpr inline explicit memory_slot( memory_slot* next ) noexcept
       :_ptr_next(next)
     {}
 
@@ -110,33 +110,33 @@ private:
 
     /***/
     constexpr inline bool         in_use() const noexcept
-    { return _ptr_next.test_flag(core::memory_address<memory_slot,size_type>::address_flags::DESTROY); }
+    { return core::memory_address<memory_slot,size_type>::test_flag(_ptr_next, core::memory_address<memory_slot,size_type>::address_flags::DESTROY); }
 
     /***/
     constexpr inline bool         is_free() const noexcept
-    { return !_ptr_next.test_flag(core::memory_address<memory_slot,size_type>::address_flags::DESTROY); }
+    { return !core::memory_address<memory_slot,size_type>::test_flag(_ptr_next, core::memory_address<memory_slot,size_type>::address_flags::DESTROY); }
 
     /***/
     constexpr inline void         set_free( memory_slot* next_free ) noexcept
     { 
       _ptr_next.set_address( next_free ); 
-      _ptr_next.unset_flag ( core::memory_address<memory_slot,size_type>::address_flags::DESTROY ); 
+      core::memory_address<memory_slot,size_type>::unset_flag ( _ptr_next, core::memory_address<memory_slot,size_type>::address_flags::DESTROY ); 
     }
 
     /***/
     constexpr inline void         set_in_use() noexcept
     { 
       _ptr_next.set_address( nullptr );
-      _ptr_next.set_flag   ( core::memory_address<memory_slot,size_type>::address_flags::DESTROY ); 
+      core::memory_address<memory_slot,size_type>::set_flag   ( _ptr_next, core::memory_address<memory_slot,size_type>::address_flags::DESTROY ); 
     }
     
     /***/
     constexpr inline size_type    get_index() noexcept
-    { return _ptr_next.get_counter(); }
+    { return core::memory_address<memory_slot,size_type>::get_counter( _ptr_next ); }
 
     /***/
     constexpr inline void         set_index( const size_type& index ) noexcept
-    { _ptr_next.set_counter( index ); }
+    { core::memory_address<memory_slot,size_type>::set_counter( _ptr_next, index ); }
 
     /***/
     constexpr static inline memory_slot* slot_from_user_data( pointer ptr ) noexcept
@@ -228,7 +228,7 @@ public:
    * 
    * @return sizeof(data_t) 
    */
-  constexpr inline size_type  type_size() const noexcept
+  static constexpr inline size_type  type_size() noexcept
   { return value_type_size; }
 
   /**
@@ -239,11 +239,11 @@ public:
   constexpr inline size_type  length() const noexcept
   { 
     std::atomic_thread_fence( std::memory_order_acquire );
-    int64_t max_length = _max_length.load( std::memory_order_relaxed );
+    int64_t max_slots  = _max_length.load( std::memory_order_relaxed );
     int64_t free_slots = _free_slots.load( std::memory_order_relaxed );
     // Due to concurrency this is necessary due to the fact that a buffer 
     // can be released before that free_slots will be decreased.
-    return std::max(max_length,free_slots)-std::min(max_length,free_slots); 
+    return std::max(max_slots,free_slots)-std::min(max_slots,free_slots); 
   }
 
   /**
@@ -265,7 +265,7 @@ public:
   /**
    * @brief Return the largest supported allocation size.
    */
-  constexpr inline size_type  max_size() const noexcept
+  static constexpr inline size_type  max_size() noexcept
   { return std::numeric_limits<size_type>::max() / memory_slot_size; }
   
   /**
@@ -335,7 +335,7 @@ public:
    *  
    * @param userdata  pointer to user data previously allocated with allocate().
    */
-  [[nodiscard]] constexpr inline core::result_t   deallocate( pointer userdata ) noexcept
+  [[nodiscard]] static constexpr inline core::result_t deallocate( pointer userdata ) noexcept
   {
     if ( userdata == nullptr )
       return core::result_t::eNullPointer;
@@ -425,7 +425,7 @@ public:
    *   
    * @param userdata  pointer to user data previously allocated with allocate().
    */
-  [[nodiscard]] constexpr inline core::result_t       unsafe_deallocate( pointer userdata ) noexcept
+  [[nodiscard]] static constexpr inline core::result_t unsafe_deallocate( pointer userdata ) noexcept
   {
     if ( userdata == nullptr )
       return core::result_t::eNullPointer;

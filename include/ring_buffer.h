@@ -68,11 +68,10 @@ private:
 
 public:
   /***/
-  constexpr ring_buffer()
-    : m_ndxWrite( 0 ),m_ndxRead(0),m_counter(0)
-  {
-    m_array = std::make_unique<std::array<slot_t, items>>();
-  }
+  constexpr inline ring_buffer()
+    : m_array(std::make_unique<std::array<slot_t, items>>()),
+      m_ndxWrite( 0 ),m_ndxRead(0),m_counter(0)
+  { }
 
   /***/
   constexpr inline size_type size() const noexcept
