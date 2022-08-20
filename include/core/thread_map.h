@@ -55,16 +55,29 @@ public:
   {}
   
   /***/
-  constexpr inline size_type  add( const value_type& tid = std::this_thread::get_id() ) noexcept
+  constexpr inline size_type add( const value_type& tid = std::this_thread::get_id() ) noexcept
   {
     if ( _map.contains(tid) )
-      return _map.at(tid);
+      return _map[tid];
     
     _mtx.lock();
     _map[tid] = ++_counter;
     _mtx.unlock();
 
     return _counter;
+  }
+
+  /***/
+  constexpr inline bool      del( const value_type& tid = std::this_thread::get_id() ) noexcept
+  {
+    if ( _map.contains(tid) == false )
+      return false;
+    
+    _mtx.lock();
+    _map.erase(tid);
+    _mtx.unlock();
+
+    return true;
   }
 
 private:
