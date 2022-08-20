@@ -48,7 +48,7 @@ struct data_item_t {
       data[i]=i;
   }
 
-  constexpr data_item_t( uint32_t value ) noexcept
+  constexpr explicit data_item_t( uint32_t value ) noexcept
   {
     for ( uint32_t i = 0; i < 12; i++ )
       data[i]=value;
