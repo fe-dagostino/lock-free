@@ -9,6 +9,7 @@ using namespace std::chrono_literals;
 struct data_item_t {
  
   data_item_t() noexcept
+   : data(0)
   {
     printf("data_item_t()\n");
   }
