@@ -43,19 +43,19 @@ public:
  */
 struct data_item_t {
   
-  data_item_t() noexcept
+  constexpr inline data_item_t() noexcept
   {
     for ( uint32_t i = 0; i < 12; i++ )
       data[i]=i;
   }
 
-  data_item_t( uint32_t value ) noexcept
+  constexpr inline explicit data_item_t( uint32_t value ) noexcept
   {
     for ( uint32_t i = 0; i < 12; i++ )
       data[i]=value;
   }
 
-  ~data_item_t() noexcept
+  constexpr inline ~data_item_t() noexcept
   {
     for ( uint32_t i = 0; i < 12; i++ )
       data[i]=0;
