@@ -191,6 +191,9 @@ public:
   }
 
   /***/
+  constexpr inline arena_allocator( const arena_allocator& ft ) noexcept = delete;
+
+  /***/
   constexpr inline ~arena_allocator() noexcept
   {
     release_instance_index();
@@ -210,6 +213,11 @@ public:
       delete _th_alloc;
     }
   }
+
+  /***/
+  constexpr inline arena_allocator& operator=( const arena_allocator& ft ) noexcept = delete;
+  /***/
+  constexpr inline arena_allocator& operator=( const arena_allocator&& ft ) noexcept = delete;
 
   /**
    * @brief Retrieve length in bytes for one single data_t.

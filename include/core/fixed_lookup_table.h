@@ -36,7 +36,8 @@ inline namespace LIB_VERSION {
 /**
  */
 template< typename data_t, typename data_size_t, data_size_t items, data_t null_value >
-struct fixed_lookup_table {
+struct fixed_lookup_table final
+{
 public:  
   using value_type      = data_t;
   using size_type       = data_size_t;
@@ -55,11 +56,19 @@ public:
   }   
 
   /***/
+  constexpr inline fixed_lookup_table( const fixed_lookup_table& ft ) noexcept = delete;
+
+  /***/
   constexpr inline ~fixed_lookup_table()
   {
     delete [] _array;
     _array = nullptr;
   }
+
+  /***/
+  constexpr inline fixed_lookup_table& operator=( const fixed_lookup_table& ft ) noexcept = delete;
+  /***/
+  constexpr inline fixed_lookup_table& operator=( const fixed_lookup_table&& ft ) noexcept = delete;
 
   /***/
   constexpr inline const value_type& operator[]( size_type ndx ) const
