@@ -52,6 +52,7 @@ class mem_unique_ptr
   using const_pointer   = const value_type*;
 
   using mem_address     = memory_address<value_type,size_t>;
+  using mem_address_ref = mem_address&;
 
 public:
   /***/
@@ -83,8 +84,10 @@ public:
   /***/
   template<Derived<value_type> T>
   constexpr inline mem_unique_ptr( mem_unique_ptr<T>&& ptr ) noexcept
-    : _ptr( ptr.release(), (ptr.auto_delete())?(uint32_t)(mem_address::address_flags::DESTROY):(uint32_t)0, 0 )
-  { }
+    : _ptr( ptr.get(), (ptr.auto_delete())?(uint32_t)(mem_address::address_flags::DESTROY):(uint32_t)0, 0 )
+  { 
+    ptr.release();
+  }
 
   /***/
   constexpr inline ~mem_unique_ptr() noexcept
@@ -103,17 +106,19 @@ public:
 
   /***/
   template<Derived<value_type> T>
-  constexpr inline reference operator=( std::unique_ptr<T>&& ptr ) noexcept
+  constexpr inline mem_unique_ptr<value_type>& operator=( std::unique_ptr<T>&& ptr ) noexcept
   { 
-    _ptr.set_address( ptr.release(), mem_address::address_flags::DESTROY );
+    mem_address::set_flag( _ptr, mem_address::address_flags::DESTROY);
+    _ptr.set_address( ptr.release() );
     return *this; 
   }
 
   /***/
   template<Derived<value_type> T>
-  constexpr inline reference operator=( mem_unique_ptr<T>&& ptr ) noexcept
+  constexpr inline mem_unique_ptr<value_type>& operator=( mem_unique_ptr<T>&& ptr ) noexcept
   { 
-    _ptr.set_address( ptr.release(), (ptr.auto_delete())?mem_address::address_flags::DESTROY:0 );
+    (ptr.auto_delete())?mem_address::set_flag( _ptr, mem_address::address_flags::DESTROY):mem_address::unset_flag( _ptr, mem_address::address_flags::DESTROY);
+    _ptr.set_address( ptr.release() );
     return *this; 
   }
 
@@ -133,20 +138,21 @@ public:
   { return _ptr; }
 
   /***/
-  constexpr inline bool    auto_delete() const noexcept
-  { return _ptr.test_flag(mem_address::address_flags::DESTROY) ; }
+  constexpr inline bool             auto_delete() const noexcept
+  { return mem_address::test_flag( _ptr, mem_address::address_flags::DESTROY) ; }
   /***/
-  constexpr inline void    auto_delete( bool autodelete ) noexcept
-  { (autodelete)?_ptr.set_flag(mem_address::address_flags::DESTROY):_ptr.unset_flag(mem_address::address_flags::DESTROY); }
+  constexpr inline void             auto_delete( bool autodelete ) noexcept
+  { (autodelete)?mem_address::set_flag( _ptr, mem_address::address_flags::DESTROY):mem_address::unset_flag( _ptr, mem_address::address_flags::DESTROY); }
 
   /* Return true if the stored pointer is not null. */
   constexpr inline operator bool() const noexcept
   { return get() == pointer() ? false : true; }
 
-  constexpr inline pointer release() noexcept
+  constexpr inline pointer          release() noexcept
   { 
     pointer ret_ptr = _ptr;
-    _ptr.set_address( nullptr, 0 );
+    _ptr.set_address( nullptr );
+    mem_address::unset_all( _ptr );
     return ret_ptr;
   }
 
