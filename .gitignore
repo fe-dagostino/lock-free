@@ -30,3 +30,6 @@
 *.exe
 *.out
 *.app
+
+# Auto config
+include/config.h
