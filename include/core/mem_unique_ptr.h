@@ -92,7 +92,7 @@ public:
     if ((auto_delete()) && ( _ptr != nullptr ))
     {
       delete (pointer)_ptr;
-      _ptr.set_address( nullptr, 0 );
+      _ptr.set_address( nullptr );
     }
   }
 
