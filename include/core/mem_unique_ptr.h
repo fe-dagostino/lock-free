@@ -106,6 +106,15 @@ public:
 
   /***/
   template<Derived<value_type> T>
+  constexpr inline mem_unique_ptr<value_type>& operator=( T* ptr ) noexcept
+  { 
+    mem_address::set_flag( _ptr, mem_address::address_flags::DESTROY);
+    _ptr.set_address( ptr );
+    return *this; 
+  }
+
+  /***/
+  template<Derived<value_type> T>
   constexpr inline mem_unique_ptr<value_type>& operator=( std::unique_ptr<T>&& ptr ) noexcept
   { 
     mem_address::set_flag( _ptr, mem_address::address_flags::DESTROY);
