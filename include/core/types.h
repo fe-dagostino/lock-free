@@ -33,6 +33,7 @@
 
 #include <thread>
 #include <atomic>
+#include <condition_variable>
 
 using namespace std::chrono_literals;
 
@@ -49,7 +50,10 @@ enum class result_t {
     eNullPointer     =  100,
     eDoubleFree      =  101,
     
-    eNotImplemented  =  200
+    eNotImplemented  =  204,
+
+    eTimeout         =  408,
+    eSignaled        =  409
 };
 
 enum class ds_impl_t {
