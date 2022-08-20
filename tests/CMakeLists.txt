@@ -31,5 +31,4 @@ endif()
 
 add_executable( unique_ptr                       unique_ptr.cpp         )
 
-
 target_link_libraries( unique_ptr                ${DEFAULT_LIBRARIES}   )
