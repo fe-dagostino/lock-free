@@ -102,6 +102,7 @@ public:
   /***/  
   constexpr inline operator pointer() const noexcept
   { return std::bit_cast<pointer>(_addr); }
+  
   /***/  
   constexpr inline pointer  operator->() const noexcept
   { return std::bit_cast<pointer>(_addr); }
@@ -129,6 +130,10 @@ public:
   /***/
   static constexpr inline void     unset_flag( memory_address<value_type,size_type>& obj, address_flags flag ) noexcept
   { obj._flags &= ~(base_t)flag; }
+
+  /***/
+  static constexpr inline void     unset_all( memory_address<value_type,size_type>& obj ) noexcept
+  { obj._flags = 0; }
   
   /***/
   static constexpr inline base_t   get_counter( const memory_address<value_type,size_type>& obj ) noexcept 
