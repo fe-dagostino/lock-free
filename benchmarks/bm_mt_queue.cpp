@@ -4,42 +4,9 @@
 #include <syncstream>
 #include <queue>
 
+#include "core/utils.h"
 #include "queue.h"
 #include "stack.h"
-
-using namespace std::chrono_literals;
-
-//#include "core/thread_map.h"
-
-class utils
-{
-public:
-  /**
-   * @brief 
-   * 
-   * @tparam T specify conversion for now(), it should be one of the following values:
-   *         - std::chrono::nanoseconds
-   *         - std::chrono::microseconds
-   *         - std::chrono::milliseconds
-   *         - std::chrono::seconds
-   *         - std::chrono::minutes
-   *         - std::chrono::hours
-   *         - std::chrono::days
-   *         - std::chrono::weeks
-   *         - std::chrono::years
-   *         - std::chrono::months
-   * @return auto 
-   */
-  template<typename T>
-  requires    std::is_same_v<T, std::chrono::nanoseconds>  || std::is_same_v<T, std::chrono::microseconds> 
-           || std::is_same_v<T, std::chrono::milliseconds> || std::is_same_v<T, std::chrono::seconds> 
-           || std::is_same_v<T, std::chrono::minutes>      || std::is_same_v<T, std::chrono::hours> 
-           || std::is_same_v<T, std::chrono::days>         || std::is_same_v<T, std::chrono::weeks> 
-           || std::is_same_v<T, std::chrono::years>        || std::is_same_v<T, std::chrono::months> 
-  static constexpr auto now() noexcept
-  { return std::chrono::time_point_cast<T>(std::chrono::steady_clock::now()).time_since_epoch().count(); }
-
-};
 
 /**
  * @brief data items used to perform operations in both 
@@ -53,7 +20,7 @@ struct data_item_t {
       data[i]=i;
   }
 
-  constexpr data_item_t( uint32_t value ) noexcept
+  constexpr explicit data_item_t( uint32_t value ) noexcept
   {
     for ( uint32_t i = 0; i < 14; i++ )
       data[i]=value;
@@ -92,7 +59,7 @@ static void th_main_producer( uint32_t th_num, uint32_t run_time, lock_free_queu
   uint32_t     successes  = 0;
   uint32_t     cycles     = 0;
 
-  auto th_start_ms = utils::now<std::chrono::milliseconds>();
+  auto th_start_ms = core::utils::now<std::chrono::milliseconds>();
 
   //double last_mon  = th_start_ms;
   for (;;)
@@ -104,12 +71,12 @@ static void th_main_producer( uint32_t th_num, uint32_t run_time, lock_free_queu
     
     ++cycles;
 
-    auto th_end_ms = utils::now<std::chrono::milliseconds>();
+    auto th_end_ms = core::utils::now<std::chrono::milliseconds>();
     if (double(th_end_ms-th_start_ms) >= run_time)
       break;
   }
 
-  auto th_end_ms = utils::now<std::chrono::milliseconds>();
+  auto th_end_ms = core::utils::now<std::chrono::milliseconds>();
 
   std::osyncstream(std::cout) << "P TH [" <<  th_num <<  "] cycles : [" << cycles << "] - successes : [" << successes << "] - failures : [" << failures << "] - duration: " << double(th_end_ms-th_start_ms)/1000 << std::endl;
 }
@@ -122,7 +89,7 @@ void th_main_consumer( uint32_t th_num, uint32_t run_time, lock_free_queue* q )
   uint32_t     successes       = 0;
   uint32_t     cycles          = 0;
 
-  auto th_start_ms = utils::now<std::chrono::milliseconds>();
+  auto th_start_ms = core::utils::now<std::chrono::milliseconds>();
 
   //double last_mon  = th_start_ms;
   for (;;)
@@ -145,12 +112,12 @@ void th_main_consumer( uint32_t th_num, uint32_t run_time, lock_free_queue* q )
 
     ++cycles;
 
-    auto th_end_ms = utils::now<std::chrono::milliseconds>();
+    auto th_end_ms = core::utils::now<std::chrono::milliseconds>();
     if (double(th_end_ms-th_start_ms) >= run_time)
       break;
   }
 
-  auto th_end_ms = utils::now<std::chrono::milliseconds>();
+  auto th_end_ms = core::utils::now<std::chrono::milliseconds>();
 
   std::osyncstream(std::cout) << "C TH [" <<  th_num <<  "] cycles : [" << cycles 
                                           << "] - successes : [" << successes 
@@ -161,12 +128,12 @@ void th_main_consumer( uint32_t th_num, uint32_t run_time, lock_free_queue* q )
 
 void th_main_monitor( status_queue* mon, uint32_t mon_time, uint32_t run_time, lock_free_queue* q )
 {
-  auto th_start_ms = utils::now<std::chrono::milliseconds>();
+  auto th_start_ms = core::utils::now<std::chrono::milliseconds>();
   
   double last_mon  = th_start_ms;
   for (;;)
   {
-    auto   current_ms = utils::now<std::chrono::milliseconds>();
+    auto   current_ms = core::utils::now<std::chrono::milliseconds>();
     if (double(current_ms-th_start_ms) >= run_time)
       break;
 
@@ -183,7 +150,7 @@ void th_main_monitor( status_queue* mon, uint32_t mon_time, uint32_t run_time, l
 
   }
 
-  auto th_end_ms = utils::now<std::chrono::milliseconds>();
+  auto th_end_ms = core::utils::now<std::chrono::milliseconds>();
 
   std::osyncstream(std::cout) << "M TH [-] - duration: " << double(th_end_ms-th_start_ms)/1000 << std::endl;
 }

@@ -3,38 +3,7 @@
 
 #include "arena_allocator.h"
 #include "core/arena_allocator.h"
-
-using namespace std::chrono_literals;
-
-class utils
-{
-public:
-  /**
-   * @brief 
-   * 
-   * @tparam T specify conversion for now(), it should be one of the following values:
-   *         - std::chrono::nanoseconds
-   *         - std::chrono::microseconds
-   *         - std::chrono::milliseconds
-   *         - std::chrono::seconds
-   *         - std::chrono::minutes
-   *         - std::chrono::hours
-   *         - std::chrono::days
-   *         - std::chrono::weeks
-   *         - std::chrono::years
-   *         - std::chrono::months
-   * @return auto 
-   */
-  template<typename T>
-  requires    std::is_same_v<T, std::chrono::nanoseconds>  || std::is_same_v<T, std::chrono::microseconds> 
-           || std::is_same_v<T, std::chrono::milliseconds> || std::is_same_v<T, std::chrono::seconds> 
-           || std::is_same_v<T, std::chrono::minutes>      || std::is_same_v<T, std::chrono::hours> 
-           || std::is_same_v<T, std::chrono::days>         || std::is_same_v<T, std::chrono::weeks> 
-           || std::is_same_v<T, std::chrono::years>        || std::is_same_v<T, std::chrono::months> 
-  static constexpr auto now() noexcept
-  { return std::chrono::time_point_cast<T>(std::chrono::steady_clock::now()).time_since_epoch().count(); }
-
-};
+#include "core/utils.h"
 
 
 /**
@@ -107,7 +76,7 @@ int main( int argc, const char* argv[] )
       // Start thread      
       th_handle[th_ndx] = new std::thread( [&]( uint32_t thread_ndx ){
             
-            auto th_start_ms = utils::now<std::chrono::milliseconds>();
+            auto th_start_ms = core::utils::now<std::chrono::milliseconds>();
 
               uint32_t    fail_count    = 0;
               std::string bm_title      = "Max Threads [" + std::to_string(th_count) + "] TH Index [" + std::to_string(thread_ndx) + bm_target;
@@ -163,7 +132,7 @@ int main( int argc, const char* argv[] )
                 
               }
 
-            auto th_end_ms = utils::now<std::chrono::milliseconds>();
+            auto th_end_ms = core::utils::now<std::chrono::milliseconds>();
             
             c_th_results[th_count-1][thread_ndx] = double(th_end_ms-th_start_ms)/1000;
 
