@@ -123,10 +123,10 @@ public:
   constexpr inline core::result_t  push( value_type&& data ) noexcept
   {
     if constexpr (imp_type==core::ds_impl_t::lockfree)
-      return _push_imp_lockfree(data);
+      return _push_imp_lockfree( std::move(data) );
     
     if constexpr (imp_type!=core::ds_impl_t::lockfree)
-      return _push_imp_default(data);
+      return _push_imp_default( std::move(data) );
     
     return core::result_t::eNotImplemented;
   }
@@ -213,8 +213,7 @@ private:
    * @param data  data to push in the stack.
    * @return constexpr node_t*  return a pointer to the node with 'data' and 'next' initialized. 
    */
-  template<typename value_type>
-  constexpr inline node_type*         create_node ( value_type& data ) noexcept
+  constexpr inline node_type*         create_node ( value_type&& data ) noexcept
   { return _arena.allocate(data); }
 
   /**
@@ -239,14 +238,14 @@ private:
     return ret_value;
   }
 
-  template<typename value_type>
+  /***/
   constexpr inline core::result_t     _push_imp_default( value_type&& data ) noexcept
   {
     core::result_t ret_value = core::result_t::eFailure;
 
     lock();
 
-    node_type* new_node = create_node(data);
+    node_type* new_node = create_node( std::move(data) );
     if ( new_node != nullptr )
     {
       new_node->_next = _head;
@@ -260,10 +259,10 @@ private:
     return ret_value;    
   }
 
-  template<typename value_type>
+  /***/
   constexpr inline core::result_t     _push_imp_lockfree( value_type&& data ) noexcept
   {
-    node_type* new_node = create_node(data);
+    node_type* new_node = create_node( std::move(data) );
     if ( new_node == nullptr )
       return core::result_t::eFailure;
 
@@ -300,7 +299,7 @@ private:
       
       _head = _head->_next;
 
-      data = first_node->_data;
+      data = std::move(first_node->_data);
       ret_value = destroy_node(first_node);
     }
 
@@ -332,7 +331,7 @@ private:
 
     std::atomic_thread_fence( std::memory_order_release );
 
-    data = old_head->_data;
+    data = std::move(old_head->_data);
 
     // if old_head have been already released, this may result in 
     // a logic issue at application level. 
