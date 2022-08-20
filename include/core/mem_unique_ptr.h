@@ -71,19 +71,19 @@ public:
   /***/
   template<Derived<value_type> T>
   constexpr inline mem_unique_ptr( T* ptr, bool autodelete = true ) noexcept
-    : _ptr( ptr, (autodelete)?(uint32_t)(mem_address::address_flags::DESTROY):(uint32_t)0 )
+    : _ptr( ptr, (autodelete)?(uint32_t)(mem_address::address_flags::DESTROY):(uint32_t)0, 0 )
   { }
 
   /***/
   template<Derived<value_type> T>
   constexpr inline mem_unique_ptr( std::unique_ptr<T>&& ptr, bool autodelete = true ) noexcept
-    : _ptr( ptr.release(), (autodelete)?(uint32_t)(mem_address::address_flags::DESTROY):(uint32_t)0 )
+    : _ptr( ptr.release(), (autodelete)?(uint32_t)(mem_address::address_flags::DESTROY):(uint32_t)0, 0 )
   { }
 
   /***/
   template<Derived<value_type> T>
   constexpr inline mem_unique_ptr( mem_unique_ptr<T>&& ptr ) noexcept
-    : _ptr( ptr.release(), (ptr.auto_delete())?(uint32_t)(mem_address::address_flags::DESTROY):(uint32_t)0 )
+    : _ptr( ptr.release(), (ptr.auto_delete())?(uint32_t)(mem_address::address_flags::DESTROY):(uint32_t)0, 0 )
   { }
 
   /***/
