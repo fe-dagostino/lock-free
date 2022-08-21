@@ -11,7 +11,9 @@ Actually, the following lock-free data structures have been implemented:
 * [arena_allocator](https://github.com/fe-dagostino/The-Magicians/blob/master/lock-free/arena_allocator/README.md) (*Lock-Free version*) : **`allocate()`** and **`deallocate()`** with a complexity of **`O(1)`**.
 * ring-buffer 
 * [queue](#queue) : this is a generic queue implementation that can be instantiated in one of the following forms: raw, mutex, spinlock, lockfree.
+* [stack](#stack) : generic stack implementation with support for raw, mutex, spinlokc, lockfree working modes as for the queue.
 * multi-queue
+* [mailbox](#mailbox) : a mailbox implementation based on lock_free::queue and leveraging core::event for notifying writes.
 
 ---
 ### ring-buffer  **(*not finalize*)**
@@ -43,6 +45,11 @@ lock_free::queue<uint32_t,uint32_t,core::ds_impl_t::lockfree>     _queue_lock_fr
 Each instance, so each specialisation, will contain only needed data members without extra cost in terms of memory or execution, so the RAW implementation will have the best performances since there are no synch mechanisms in such instance.
 
 ---
+### stack
+Exactly as for the [queue](#queue) the same class can be instantiated to leverage different implementations.
+
+
+---
 ### multi-queue  **(*not finalize*)**
 
 I guess there are ton of implementation for lock-free queue and this is one more.
@@ -53,9 +60,82 @@ This implementation can be used as:
 To leverage maximum performance from this implementation, it is necessary to use preallocated `nodes`.
 
 ---
+### mailbox
+Useful in circumstances where there is the need to exchanges data between producer and consumer without to have consumer/s continuously checking the queue. One typical application is for logging purpose, where there is the need to centralize logging, but in your application there are many thread producing log information, this is a perfect use case for a mailbox, since there is a minimal extra for each thread to call mailbox->write() and then one other thread will manage to read and physically write the log on disk, db, stream ... .
+Implementation leverage lock_free::queue and core::event to create a mailbox where producer relies on queue implementation (lockfree, mutex ..) instead the consumer/s rely on condition variable and wake up periodically or when a signal occurs.
+For a working example please refer to `examples` subfolder for [mailbox.h](./examples/mailbox.cpp).
+
+```cpp
+
+/**
+ * This is an example class. You can avoid creating copy and move constructors,
+ * but in such case the compiler will use default constructor and assignment operator.
+ * In order to fully leverage the move semantic you should create both move constructor and
+ * assignment operator with move semantic.
+*/
+class mbx_data
+{
+public:
+  mbx_data()
+    : _value(0)
+  {  }
+
+  ...
+  .....
+
+  void set_value( uint32_t value )
+  { _value = value; }
+
+  uint32_t get_value() const
+  { return _value; }
+
+private:
+  uint32_t _value;
+};
+
+// all other available implementation can be used
+using mailbox_type = lock_free::mailbox<mbx_data, core::ds_impl_t::lockfree, 0>;
+
+// Producer main thread with writing logic. 
+// The mailbox can be shared among different threads.
+void th_main_write( mailbox_type* mbx )
+{
+  mbx_data  md;
+  while ( true )
+  {
+    md.set_value( .. );
+
+    mbx->write( md );
+  }
+}
+
+// The mailbox allow multiple consumers as well.
+void th_main_read( mailbox_type* mbx )
+{
+  mbx_data data;
+  while ( true )
+  {
+    // Read the value or wait 100 ms.
+    // During the waiting time a signal can occur then the read will 
+    // unlock for reading. 
+    core::result_t res =  mbx->read( data, 100 );
+    ...
+    .....
+  }
+}
+
+
+```
+
+
+---
 ## Other implementations - namespece `core`
 
 * [arena_allocator](https://github.com/fe-dagostino/The-Magicians/blob/master/lock-free/arena_allocator/README.md) (*Spinlock version*): **`allocate()`** and **`deallocate()`** with a complexity of **`O(1)`**.
-* [mem_unique_ptr]() ... *wip*
+* memory_address ...
+* mem_unique_ptr ... *wip*
+* mutex
+* event
+ 
 
 
