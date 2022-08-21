@@ -223,6 +223,34 @@ struct node_t : plug_prev<value_type, add_prev, add_next, use_atomic>,
   { }
 
   /***/
+  constexpr inline node_t& operator=( const node_t& node ) noexcept
+  {
+    if constexpr (node_prev_type::has_prev==true)
+    { node_prev_type::_prev = node._prev; }
+
+    if constexpr (node_next_type::has_next==true)
+    { node_next_type::_next = node._next; }
+
+    _data = node._data;
+
+    return *this;
+  }
+
+  /***/
+  constexpr inline node_t& operator=( node_t&& node ) noexcept
+  {
+    if constexpr (node_prev_type::has_prev==true)
+    { node_prev_type::_prev = std::move(node._prev); }
+
+    if constexpr (node_next_type::has_next==true)
+    { node_next_type::_next = std::move(node._next); }
+
+    _data = std::move(node._data);
+
+    return *this;
+  }
+
+  /***/
   constexpr inline pointer get_prev() const
   { 
     if constexpr ( node_prev_type::has_prev == true )  // also add_next can be used here.
