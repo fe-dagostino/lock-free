@@ -33,6 +33,11 @@ inline namespace LIB_VERSION {
 
 /**
  * @brief A mailbox implementation.
+ *        Useful in circumstances where there is the need to exchanges data between producer 
+ *        and consumer without to have consumer continuously checking the queue. Implementation 
+ *        leverage lock_free::queue and core::event to create a mailbox where producer relies 
+ *        on queue implementation (lockfree, mutex ..) instead the consumer/s rely on condition 
+ *        variable and wake up periodically or when a signal occurs.
  */
 template<typename data_t, core::ds_impl_t imp_type, uint32_t size_limit = 0 >
 class mailbox : protected lock_free::queue< data_t, uint32_t, imp_type, 1024, 1024, size_limit >
@@ -70,7 +75,7 @@ public:
   {
     core::result_t result = queue_type::push( std::move(data) );
     if ( result == core::result_t::eSuccess )
-    { _event.signal(); }
+    { _event.notify(); }
 
     return result;
   }
