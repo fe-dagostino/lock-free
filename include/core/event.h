@@ -70,7 +70,7 @@ public:
   /**
    * @brief Signal the event and unlock waiting threads.
    */
-  inline void     signal() noexcept
+  inline void     notify() noexcept
   { _cv.notify_all(); }
 
 private:
