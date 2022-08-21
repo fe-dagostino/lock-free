@@ -216,7 +216,7 @@ private:
    * @return constexpr node_t*  return a pointer to the node with 'data' and 'next' initialized. 
    */
   constexpr inline node_type*         create_node ( value_type&& data ) noexcept
-  { return _arena.allocate(data); }
+  { return _arena.allocate( std::move(data) ); }
 
   /**
    * @brief Make specified node available for future use.
