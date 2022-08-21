@@ -12,30 +12,30 @@ public:
   mbx_data()
     : _value(0)
   {
-    std::cout << "create mbx_data " << std::endl;
+    std::osyncstream(std::cout) << "create mbx_data " << std::endl;
   }
 
   mbx_data( const mbx_data& md )
     : _value(md._value)
   {
-    std::cout << "create mbx_data from copy constructor" << std::endl;
+    std::osyncstream(std::cout) << "create mbx_data from copy constructor" << std::endl;
   }
 
   mbx_data( mbx_data&& md )
     : _value(md._value)
   {
-    std::cout << "create mbx_data from move constructor" << std::endl;
+    std::osyncstream(std::cout) << "create mbx_data from move constructor" << std::endl;
   }
 
   ~mbx_data()
   {
-    std::cout << "destroy mbx_data " << std::endl;
+    std::osyncstream(std::cout) << "destroy mbx_data " << std::endl;
   }
 
   /**/
   mbx_data& operator=( const mbx_data& md ) 
   { 
-    std::cout << "assigned value by copy" << std::endl;
+    std::osyncstream(std::cout) << "assigned value by copy" << std::endl;
     _value = md._value; 
     return *this;
   }
@@ -43,7 +43,7 @@ public:
   /**/
   mbx_data& operator=( mbx_data&& md ) 
   { 
-    std::cout << "assigned value by move" << std::endl;
+    std::osyncstream(std::cout) << "assigned value by move" << std::endl;
     _value = md._value; 
     return *this;
   }
@@ -51,7 +51,7 @@ public:
   void set_value( uint32_t value )
   { _value = value; }
 
-  uint32_t get_value()
+  uint32_t get_value() const
   { return _value; }
 
   uint32_t _value;
