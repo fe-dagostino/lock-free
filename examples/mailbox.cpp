@@ -32,7 +32,7 @@ public:
     std::osyncstream(std::cout) << "destroy mbx_data " << std::endl;
   }
 
-  /**/
+  
   mbx_data& operator=( const mbx_data& md ) 
   { 
     std::osyncstream(std::cout) << "assigned value by copy" << std::endl;
@@ -40,7 +40,7 @@ public:
     return *this;
   }
 
-  /**/
+  
   mbx_data& operator=( mbx_data&& md ) 
   { 
     std::osyncstream(std::cout) << "assigned value by move" << std::endl;
@@ -131,7 +131,7 @@ int main()
   std::cout << "  - Initial size = " << mbx.size() << std::endl;
   std::cout << "  - Is Empty()   = " << (mbx.empty()?"true":"false") << std::endl;
 
-  uint32_t writers      = 3;
+  uint32_t writers      = 1;
   uint32_t readers      = 1;
   uint32_t run_time_ms  = 60000;       // milliseconds
 
