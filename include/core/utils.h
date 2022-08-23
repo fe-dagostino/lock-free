@@ -25,6 +25,7 @@
 #define CORE_UTILS_H
 
 #include "core/types.h"
+#include <vector>
 
 using namespace std::chrono_literals;
 
@@ -62,6 +63,22 @@ public:
            || std::is_same_v<T, std::chrono::years>        || std::is_same_v<T, std::chrono::months> 
   static constexpr auto now() noexcept
   { return std::chrono::time_point_cast<T>(std::chrono::steady_clock::now()).time_since_epoch().count(); }
+
+  /**
+   * @brief Waiting std::format to be fully supported.
+   */
+  template<typename ... Args>
+  static constexpr std::string format( const char* format, Args ... args ) noexcept
+  {
+    int buffer_size = std::snprintf( nullptr, 0, format, args ... );
+    if ( buffer_size <= 0 )
+      return std::string();
+
+    std::vector<char> buffer(buffer_size + 1);        
+    std::snprintf(&buffer[0], buffer.size(), format, args ... );
+    
+    return std::string( buffer.begin(), buffer.end() );
+  }
 
 };
 
