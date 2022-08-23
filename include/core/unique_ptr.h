@@ -21,8 +21,8 @@
  *
  *************************************************************************************************/
 
-#ifndef CORE_MEM_UNIQUE_PTR_H
-#define CORE_MEM_UNIQUE_PTR_H
+#ifndef CORE_UNIQUE_PTR_H
+#define CORE_UNIQUE_PTR_H
 
 #include <memory>
 
@@ -43,7 +43,7 @@ concept Data_t = (    std::is_object_v<T>
                    && !std::is_pointer_v<T> );
 
 template <Data_t data_t>
-class mem_unique_ptr
+class unique_ptr
 {
   using value_type      = data_t; 
   using reference       = value_type&;
@@ -56,41 +56,41 @@ class mem_unique_ptr
 
 public:
   /***/
-  constexpr inline mem_unique_ptr( ) noexcept
+  constexpr inline unique_ptr( ) noexcept
     : _ptr( )
   { }
   /***/
-  constexpr inline mem_unique_ptr( std::nullptr_t ) noexcept
+  constexpr inline unique_ptr( std::nullptr_t ) noexcept
     : _ptr( )
   { }
 
   /**
    * @brief explicity disable copy constructor.
    */
-  constexpr inline mem_unique_ptr( const mem_unique_ptr<value_type>& ptr ) noexcept = delete;
+  constexpr inline unique_ptr( const unique_ptr<value_type>& ptr ) noexcept = delete;
 
   /***/
   template<Derived<value_type> T>
-  constexpr inline mem_unique_ptr( T* ptr, bool autodelete = true ) noexcept
+  constexpr inline unique_ptr( T* ptr, bool autodelete = true ) noexcept
     : _ptr( ptr, (autodelete)?(uint32_t)(mem_address::address_flags::DESTROY):(uint32_t)0, 0 )
   { }
 
   /***/
   template<Derived<value_type> T>
-  constexpr inline mem_unique_ptr( std::unique_ptr<T>&& ptr, bool autodelete = true ) noexcept
+  constexpr inline unique_ptr( std::unique_ptr<T>&& ptr, bool autodelete = true ) noexcept
     : _ptr( ptr.release(), (autodelete)?(uint32_t)(mem_address::address_flags::DESTROY):(uint32_t)0, 0 )
   { }
 
   /***/
   template<Derived<value_type> T>
-  constexpr inline mem_unique_ptr( mem_unique_ptr<T>&& ptr ) noexcept
+  constexpr inline unique_ptr( unique_ptr<T>&& ptr ) noexcept
     : _ptr( ptr.get(), (ptr.auto_delete())?(uint32_t)(mem_address::address_flags::DESTROY):(uint32_t)0, 0 )
   { 
     ptr.release();
   }
 
   /***/
-  constexpr inline ~mem_unique_ptr() noexcept
+  constexpr inline ~unique_ptr() noexcept
   {
     if ((auto_delete()) && ( _ptr != nullptr ))
     {
@@ -102,11 +102,11 @@ public:
   /**
    * @brief explicity disable assignment operator.
    */
-  constexpr inline mem_unique_ptr<value_type>& operator=( const mem_unique_ptr<value_type>& ptr ) noexcept = delete;
+  constexpr inline unique_ptr<value_type>& operator=( const unique_ptr<value_type>& ptr ) noexcept = delete;
 
   /***/
   template<Derived<value_type> T>
-  constexpr inline mem_unique_ptr<value_type>& operator=( T* ptr ) noexcept
+  constexpr inline unique_ptr<value_type>& operator=( T* ptr ) noexcept
   { 
     mem_address::set_flag( _ptr, mem_address::address_flags::DESTROY);
     _ptr.set_address( ptr );
@@ -115,7 +115,7 @@ public:
 
   /***/
   template<Derived<value_type> T>
-  constexpr inline mem_unique_ptr<value_type>& operator=( std::unique_ptr<T>&& ptr ) noexcept
+  constexpr inline unique_ptr<value_type>& operator=( std::unique_ptr<T>&& ptr ) noexcept
   { 
     mem_address::set_flag( _ptr, mem_address::address_flags::DESTROY);
     _ptr.set_address( ptr.release() );
@@ -124,7 +124,7 @@ public:
 
   /***/
   template<Derived<value_type> T>
-  constexpr inline mem_unique_ptr<value_type>& operator=( mem_unique_ptr<T>&& ptr ) noexcept
+  constexpr inline unique_ptr<value_type>& operator=( unique_ptr<T>&& ptr ) noexcept
   { 
     (ptr.auto_delete())?mem_address::set_flag( _ptr, mem_address::address_flags::DESTROY):mem_address::unset_flag( _ptr, mem_address::address_flags::DESTROY);
     _ptr.set_address( ptr.release() );
@@ -170,23 +170,23 @@ private:
 };
 
 template<typename data_t>
-bool operator==( const mem_unique_ptr<data_t>& lhs, const mem_unique_ptr<data_t>& rhs)
+bool operator==( const unique_ptr<data_t>& lhs, const unique_ptr<data_t>& rhs)
 { return (lhs.get() == rhs.get()); }
 
 template<typename data_t>
-bool operator==(const mem_unique_ptr<data_t>& lhs, std::nullptr_t ) noexcept
+bool operator==(const unique_ptr<data_t>& lhs, std::nullptr_t ) noexcept
 { return !(bool)lhs; }
 
 template<typename data_t>
-bool operator!=( const mem_unique_ptr<data_t>& lhs, const mem_unique_ptr<data_t>& rhs)
+bool operator!=( const unique_ptr<data_t>& lhs, const unique_ptr<data_t>& rhs)
 { return (lhs.get() != rhs.get()); }
 
 template<typename data_t>
-bool operator!=(const mem_unique_ptr<data_t>& lhs, std::nullptr_t ) noexcept
+bool operator!=(const unique_ptr<data_t>& lhs, std::nullptr_t ) noexcept
 { return (bool)lhs; }
 
 } // namespace LIB_VERSION 
 
 }
 
-#endif // CORE_MEM_UNIQUE_PTR_H
+#endif // CORE_UNIQUE_PTR_H
