@@ -5,7 +5,7 @@
 #include <queue>
 
 #include "core/utils.h"
-#include "queue.h"
+#include "stack.h"
 
 /**
  * @brief data items used to perform operations in both 
@@ -43,16 +43,16 @@ struct queue_status_t {
   uint64_t   _size;
 };
 
-  
-//using lock_free_queue = typename lock_free::queue<uint32_t,uint32_t, core::ds_impl_t::raw, 1000000, 1000000, 0 >;
-//using lock_free_queue = typename lock_free::queue<uint32_t,uint32_t, core::ds_impl_t::mutex, 1000000, 1000000, 0 >;
-//using lock_free_queue = typename lock_free::queue<uint32_t,uint32_t, core::ds_impl_t::spinlock, 1000000, 1000000, 0 >;
-using lock_free_queue = typename lock_free::queue<uint32_t,uint32_t, core::ds_impl_t::lockfree, 1000000, 1000000, 0 >;
+
+//using lock_free_stack = typename lock_free::stack<uint32_t,uint32_t, core::ds_impl_t::raw, 1000000, 1000000, 0 >;
+//using lock_free_stack = typename lock_free::stack<uint32_t,uint32_t, core::ds_impl_t::mutex, 1000000, 1000000, 0 >;
+//using lock_free_stack = typename lock_free::stack<uint32_t,uint32_t, core::ds_impl_t::spinlock, 1000000, 1000000, 0 >;
+using lock_free_stack = typename lock_free::stack<uint32_t,uint32_t, core::ds_impl_t::lockfree, 1000000, 1000000, 0 >;
 
 using status_queue    = typename std::queue<queue_status_t>;
 
 
-static void th_main_producer( uint32_t th_num, uint32_t run_time, lock_free_queue* q )
+static void th_main_producer( uint32_t th_num, uint32_t run_time, lock_free_stack* q )
 {
   uint32_t     failures   = 0;
   uint32_t     successes  = 0;
@@ -80,7 +80,7 @@ static void th_main_producer( uint32_t th_num, uint32_t run_time, lock_free_queu
   std::osyncstream(std::cout) << "P TH [" <<  th_num <<  "] cycles : [" << cycles << "] - successes : [" << successes << "] - failures : [" << failures << "] - duration: " << double(th_end_ms-th_start_ms)/1000 << std::endl;
 }
 
-void th_main_consumer( uint32_t th_num, uint32_t run_time, lock_free_queue* q )
+void th_main_consumer( uint32_t th_num, uint32_t run_time, lock_free_stack* q )
 {
   uint32_t     dit_pop;
   uint32_t     got_empty       = 0;
@@ -125,7 +125,7 @@ void th_main_consumer( uint32_t th_num, uint32_t run_time, lock_free_queue* q )
                                           << "] - duration: " << double(th_end_ms-th_start_ms)/1000 << std::endl;
 }
 
-void th_main_monitor( status_queue* mon, uint32_t mon_time, uint32_t run_time, lock_free_queue* q )
+void th_main_monitor( status_queue* mon, uint32_t mon_time, uint32_t run_time, lock_free_stack* q )
 {
   auto th_start_ms = core::utils::now<std::chrono::milliseconds>();
   
@@ -163,7 +163,7 @@ int main( int argc, const char* argv[] )
   (void)argc;
   (void)argv;
 
-  lock_free_queue queue;
+  lock_free_stack stack;
   status_queue    mon_queue;
 
   uint32_t producers      = 1;
@@ -174,16 +174,16 @@ int main( int argc, const char* argv[] )
   std::vector<std::thread>  vec_producers;
   std::vector<std::thread>  vec_consumers;
 
-  std::thread th_mon( th_main_monitor, &mon_queue, mon_time_ms, run_time_ms, &queue );
+  std::thread th_mon( th_main_monitor, &mon_queue, mon_time_ms, run_time_ms, &stack );
 
   for ( uint32_t th_num = 0; th_num < producers; th_num++ )
   {
-    vec_producers.emplace_back( std::thread( th_main_producer, th_num, run_time_ms, &queue) );
+    vec_producers.emplace_back( std::thread( th_main_producer, th_num, run_time_ms, &stack) );
   }
 
   for ( uint32_t th_num = 0; th_num < consumers; th_num++ )
   {
-    vec_consumers.emplace_back( std::thread( th_main_consumer, th_num, run_time_ms, &queue) );
+    vec_consumers.emplace_back( std::thread( th_main_consumer, th_num, run_time_ms, &stack) );
   }
 
   for ( auto& th : vec_producers )
@@ -194,7 +194,7 @@ int main( int argc, const char* argv[] )
 
   th_mon.join();
 
-  std::osyncstream(std::cout) << "NOT CONSUMED ITEMS = " << queue.size() << std::endl;
+  std::osyncstream(std::cout) << "NOT CONSUMED ITEMS = " << stack.size() << std::endl;
   std::osyncstream(std::cout) << std::endl;
   std::osyncstream(std::cout) << "----------------------------" << std::endl;
   std::osyncstream(std::cout) << std::endl;

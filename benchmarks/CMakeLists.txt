@@ -55,8 +55,10 @@ add_executable( bm_arena_allocator                       bm_arena_allocator.cpp 
 add_executable( bm_mt_arena_allocator                    bm_mt_arena_allocator.cpp        )
 add_executable( bm_mt_arena_allocator_stress             bm_mt_arena_allocator_stress.cpp )
 add_executable( bm_mt_queue                              bm_mt_queue.cpp                  )
+add_executable( bm_mt_stack                              bm_mt_stack.cpp                  )
 
 target_link_libraries( bm_arena_allocator                ${DEFAULT_LIBRARIES}         )
 target_link_libraries( bm_mt_arena_allocator             ${DEFAULT_LIBRARIES}         )
 target_link_libraries( bm_mt_arena_allocator_stress      ${DEFAULT_LIBRARIES}         )
 target_link_libraries( bm_mt_queue                       ${DEFAULT_LIBRARIES}         )
+target_link_libraries( bm_mt_stack                       ${DEFAULT_LIBRARIES}         )
