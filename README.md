@@ -12,7 +12,7 @@ Actually, the following lock-free data structures have been implemented:
 * ring-buffer 
 * [queue](#queue) : this is a generic queue implementation that can be instantiated in one of the following forms: raw, mutex, spinlock, lockfree.
 * [stack](#stack) : generic stack implementation with support for raw, mutex, spinlokc, lockfree working modes as for the queue.
-* multi-queue
+* [multi-queue](#multi-queue): take advantage of both [queue](#queue) and arena_allocator implementation to minimize resource contention and consequently maximizing performances.
 * [mailbox](#mailbox) : a mailbox implementation based on lock_free::queue and leveraging core::event for notifying writes.
 
 ---
@@ -50,14 +50,34 @@ Exactly as for the [queue](#queue) the same class can be instantiated to leverag
 
 
 ---
-### multi-queue  **(*not finalize*)**
+### multi-queue  
 
 I guess there are ton of implementation for lock-free queue and this is one more.
 This implementation can be used as:
 - ***Single Queue***: shared between a 1-producer and 1-consumer as well as N-producer and M-Consumer. Each single queue is FIFO compliant. 
-- ***Multiple Queues***: useful in each scenario where we have multiple producers (threads) and we can dedicate one thread to one queue and we have one or more consumer taking data from all of this queue. 
+- ***Multiple Queues***: useful in each scenario where we have multiple producers (threads) and we can dedicate one thread to one queue and we have one or more consumer taking data from all of this queues. A tipical application is for logging activities, where logs are provided by different theads and there is one other in charge to serialize and store all informations. 
 **Note**: FIFO is guaranteed on each single queue, but not between queues.
 To leverage maximum performance from this implementation, it is necessary to use preallocated `nodes`.
+
+A multi-queue class expose an interface compatible with lock_free::queue, moreover it allow also to selelct internal queue, so for example:
+
+```
+using queue_type = lock_free::multi_queue<u_int64_t,uint32_t, 8 /*number of queues*/>;
+
+queue_type  mqueue;
+
+// Invoking push() with only 1 parameter automatically select one 
+// of the queue accordingly with the calling thread and enqueue on
+// such selected queue.  
+mqueue.push( 12 );
+
+// Invoking push() with 2 parameters allow the application to 
+// select on which queue, in the range [0..7 (queues-1)], the data should 
+// be enqueued.
+mqueue.push( 1, 12 );
+```
+
+It is important to notice that each queue has its own arena_allocator in order to reduce resources contention in favour of performances. 
 
 ---
 ### mailbox
