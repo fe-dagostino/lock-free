@@ -2,7 +2,7 @@
 
 This repository will be populated with primarily with lock-free data structures, keeping implementation simple and hopefully readable for everyone, and with other useful data structures. 
 
-Current data structures implementations leverage C++20, so in order to build examples or to use such the following implementations a compiler that support at least C++20 is a pre-requirements. 
+Current data structures implementations leverage C++20, so in order to [build examples](#build-from-source) or to use such the following implementations a compiler that support at least C++20 is a pre-requirements. 
 
 ---
 ## Lock-Free implementations - namespece `lock_free`
@@ -139,3 +139,21 @@ void th_main_read( mailbox_type* mbx )
  
 
 
+# Build from source
+In order to build the examples and benchmarks programs the following are required:
+
+* a compiler with C++20 support
+* cmake >= 3.16
+* git (optional)
+
+Source code can be retrieved either from cloning github repository with git or downloading .zip archive.
+
+```cpp
+# git clone https://github.com/fe-dagostino/libcsv.git
+# cd libcsv
+# mkdir build
+# cmake ../ -DCMAKE_BUILD_TYPE=Release -DLF_BUILD_BENCHMARKS=ON -DLF_BUILD_EXAMPLES=ON -DLF_BUILD_TESTS=ON
+# make
+```
+
+**Note**: currently the library is headers only, so except that for examples programs you don't need to build it, but just to include necessary headers in your project.
