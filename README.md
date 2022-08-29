@@ -1,3 +1,5 @@
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Language](https://img.shields.io/badge/language-c++-red.svg)](https://en.cppreference.com/)
 # Lock-Free data structures
 
 This repository will be populated with primarily with lock-free data structures, keeping implementation simple and hopefully readable for everyone, and with other useful data structures. 
@@ -156,7 +158,13 @@ void th_main_read( mailbox_type* mbx )
 * mem_unique_ptr ... *wip*
 * mutex
 * event
- 
+* abstract_factory: an implementation that make use of templates, metaprogramming, concepts and functional to create all at compile-time, since we know all information when we build our program.
+* *type_traits* extensions in "types.h":
+  * **conditional**: similar to `std::conditional_t`, the same pattern have been applied to values instead of types
+  * **are_base_of**: extend `std::is_base_of` for multiple types
+  * **derived_types** concept: leverage `is_base_of_types` to create a constraints
+  * **mutex_interface** concept: constraints for a mutex interface.
+  * **tstring_t**: literals as template parameters used by `plug_name<>`
 
 
 # Build from source

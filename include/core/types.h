@@ -27,9 +27,11 @@
 #include <cstddef>
 #include <cstdint>
 #include <type_traits>
+#include <algorithm>
 
 #include <mutex>
 #include "core/mutex.h"
+
 
 #include <thread>
 #include <atomic>
@@ -63,6 +65,47 @@ enum class ds_impl_t {
   lockfree
 };
 
+/*********************/
+template<size_t size>
+struct tstring_t {
+    /***/
+    constexpr tstring_t(const char (&str)[size]) 
+    { std::copy_n(str, size, _in_string); }
+
+    /**
+     * Return string length.
+     */
+    constexpr size_t      length()  const 
+    { return size-1; }
+    /**
+     * Return a pointer to the null terminated string.
+     */
+    constexpr const char* c_str() const
+    { return &_in_string[0]; }
+
+    char _in_string[size];
+};
+
+/*********************/
+template<tstring_t str>
+struct plug_name
+{ 
+  constexpr static const bool             has_name = (str.length()>1)?true:false;
+  constexpr static const std::string_view name     = str.c_str();
+};
+
+/**
+ * @brief Define concept for plug_name interface requirements.
+ */
+template <typename P>
+concept plug_name_interface = requires( ) 
+{
+  { P::has_name };
+  { P::name     };
+};
+
+/*********************/
+
 /**
  * @brief Similar to conditional_t, the same pattern have been applied to 
  *        values.
@@ -72,6 +115,28 @@ struct conditional                         { enum : value_type { value = T }; };
 /* specialization for 'false' */
 template<typename value_type, value_type T, value_type F>
 struct conditional<value_type,false, T, F> { enum : value_type { value = F }; };
+
+/*********************/
+
+/**
+ * @brief std::is_base_of extended for multiple types
+ */
+template<typename base_t, typename... others_t>
+struct are_base_of
+{ constexpr static const bool value = std::conjunction_v<std::is_base_of<base_t,others_t>... >; };
+
+/*********************/
+
+/**
+ * @brief Define concept checking that all @tparamother_t types are derived from @base_t.
+ */
+template<typename base_t, typename... others_t>
+concept derived_types = requires
+{
+  requires are_base_of<base_t,others_t...>::value;
+};
+
+/*********************/
 
 /**
  * @brief Define concept for mutex interface in order.
@@ -84,6 +149,8 @@ concept mutex_interface = requires( M& m )
   { m.try_lock() } -> std::same_as<bool>;
 };
 
+/*********************/
+
 /**
  * @brief plug an optional mutex in your derived class.
  * 
@@ -94,7 +161,7 @@ template<bool add_mutex, typename mutex_t = core::mutex>
 requires mutex_interface<mutex_t>
 struct plug_mutex
 { 
-  static constexpr const bool has_mutex = true;
+  constexpr static const bool has_mutex = true;
   
   using mutex_type = mutex_t;
 
@@ -112,7 +179,7 @@ struct plug_mutex
 
 template<typename mutex_t>
 struct plug_mutex<false,mutex_t> { 
-  static constexpr const bool has_mutex = false;
+  constexpr static const bool has_mutex = false;
 };
 
 /**
@@ -134,7 +201,7 @@ struct node_t;
  */
 template<typename value_type,bool add_prev,bool add_next, bool use_atomic>
 struct plug_prev {
-  static constexpr bool has_prev = true;
+  constexpr static bool has_prev = true;
 
   constexpr inline plug_prev()
     : _prev(nullptr)
@@ -151,7 +218,7 @@ struct plug_prev {
  */
 template <typename value_type,bool add_next,bool use_atomic>
 struct plug_prev<value_type,false,add_next,use_atomic> {
-  static constexpr bool has_prev = false;
+  constexpr static bool has_prev = false;
 };
 
 /**
@@ -159,7 +226,7 @@ struct plug_prev<value_type,false,add_next,use_atomic> {
  */
 template<typename value_type,bool add_prev,bool add_next, bool use_atomic>
 struct plug_next {
-  static constexpr bool has_next = true;
+  constexpr static bool has_next = true;
 
   constexpr inline plug_next()
     : _next(nullptr)
@@ -176,7 +243,7 @@ struct plug_next {
  */
 template <typename value_type,bool add_prev,bool use_atomic>
 struct plug_next<value_type,add_prev,false,use_atomic> {
-  static constexpr bool has_next = false;    
+  constexpr static bool has_next = false;    
 };
 
 /**
