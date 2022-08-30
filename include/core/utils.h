@@ -25,6 +25,7 @@
 #define CORE_UTILS_H
 
 #include "core/types.h"
+#include <cstring>
 #include <vector>
 
 using namespace std::chrono_literals;
@@ -79,6 +80,57 @@ public:
     
     return std::string( buffer.begin(), buffer.end() );
   }
+
+  /**
+   * @brief Split a source string in tokens using specified delimeters.
+   * 
+   * @param str           r/w buffer will be modified. 
+   *                      The application is in charge to create a copy for str or not.
+   * @param delimiters    list of characters used as delimeter between two token.
+   * @return tokens       a vector with all tokens in the same order they were retrieved from @str
+   */
+  static std::vector<std::string> strtok( std::string& str, const std::string& delimiters )
+  {
+    std::vector<std::string> _tokens;
+    strtok( str, delimiters, _tokens );
+    return _tokens;
+  }
+
+  /**
+   * @brief Split a source string in tokens using specified delimeters.
+   * 
+   * @param str           r/w buffer will be modified. 
+   *                      The application is in charge to create a copy for str or not.
+   * @param delimiters    list of characters used as delimeter between two token.
+   * @param tokens        output vector used to store all tokens in the same order they were retrieved from @str
+   * @return true         @tokens can be empty if no token were found.
+   * @return false        str or delimeters were empty.
+   */
+  static bool                     strtok( std::string& str, const std::string& delimiters, std::vector<std::string>& tokens )
+  {
+    if ( str.empty()  || delimiters.empty() )
+      return false;
+
+    /* cool but only works with GCC and not with CLang 14.0 so we keep a retro' implementation for now in
+       order to support the same code with different copilers. When ranges will be fully implemented also 
+       in CLang this code will be used a generic implementation.
+
+    std::string_view words(str);
+    std::string_view delim(delimiters);
+    for (const auto word : std::views::split(words, delim)) 
+    { tokens.emplace_back( std::string_view(word.begin(), word.end()) ); }
+    */
+    char *cursor = str.data();
+    char *token  = std::strtok(cursor, delimiters.c_str());
+    while (token) 
+    {
+      tokens.emplace_back( token );
+      token = std::strtok(nullptr, delimiters.c_str());
+    }
+
+    return true;
+  }
+
 
 };
 
