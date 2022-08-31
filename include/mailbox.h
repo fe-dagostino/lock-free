@@ -63,8 +63,11 @@ public:
   /***/
   constexpr inline core::result_t      read( value_type& data, uint32_t timeout )
   {
-    if ( _event.wait( timeout ) == core::result_t::eTimeout )
-      return core::result_t::eTimeout;
+    if ( empty() == true )
+    {
+      if ( _event.wait( timeout ) == core::result_t::eTimeout )
+        return core::result_t::eTimeout;
+    }
 
     return queue_type::pop( data );
   }
