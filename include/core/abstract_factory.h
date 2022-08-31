@@ -32,57 +32,56 @@ namespace core {
 inline namespace LIB_VERSION {
 
 /***
- * Origial design and for this class and all credits for that rely on @quuxplusone, get the link to 
- * the thread on stackoverflow for that:
- * https://codereview.stackexchange.com/questions/240157/c-template-to-implement-the-factory-pattern
+ * Original design and for this class and all credits for that rely on @Quuxplusone, get the link to 
+ * the question on Code Review for that:
+ * https://codereview.stackexchange.com/a/240186
  * 
  * The review for such implementation is intended to go over different limitations such as:
- *   - retrieving a name to the inner template class, originally named "LabledClass" and renamed in "concrete_factory"
- *   - avoiding instatiating classes when not necessary, in fact a data memebre in LabeledClass was instatiating an
+ *   - retrieving a name to the inner template class, originally named `LabledClass` and renamed in `concrete_factory`
+ *   - avoiding instantiating classes when not necessary, in fact a data member in LabeledClass was instantiating an
  *     object for each derived class.
  *   - simply dependencies check removing all static functions and replacing it with concepts
  *   - allow to have different constructor for each object and to forward all arguments
- *   - updating default, allowing the user to choice a default type to be instantiated or to return nullptr
+ *   - updating default, allowing the user to choice a default type to be instantiated or to return `nullptr`
  */
 template<typename base_t, typename default_t, typename... others_t>
   requires derived_types<base_t,others_t...> 
 class abstract_factory 
 {
 public:
-    template<typename derived_t>
+  template<typename derived_t>
     requires plug_name_interface<derived_t>
-    struct concrete_factory {
-      std::string_view name = derived_t::name;
+  struct concrete_factory {
+    std::string_view name = derived_t::name;
 
-      /** Create derived class instance forwarding arguments. */
-      template<typename... args_t>
-      std::unique_ptr<base_t> create( args_t&&... args )
-      {  return std::make_unique<derived_t>( std::forward<args_t&&>(args)... ); }
-    };
-
-    using concrete_factories = std::tuple<concrete_factory<others_t>...>;
-
+    /** Create derived class instance forwarding arguments. */
     template<typename... args_t>
-    static std::unique_ptr<base_t> create(const std::string_view& id, args_t&&... args ) 
-    {
-        std::unique_ptr<base_t> result = nullptr;
+    std::unique_ptr<base_t> create( args_t&&... args )
+    {  return std::make_unique<derived_t>( std::forward<args_t&&>(args)... ); }
+  };
 
-        // if concrete_factory matches with the name, use the concrete factory to create the new instance.
-        std::apply( [&result, &id,... args = std::move(args)](auto&&... tuple_item ) {
-                        (( tuple_item.name == id ? result = tuple_item.create( std::move(args)... ) : result ), ...);
-                    }, concrete_factories{}
-                  );
+  using concrete_factories = std::tuple<concrete_factory<others_t>...>;
 
-        if ( result == nullptr )
-        {
-          if constexpr ( std::is_same_v<std::nullptr_t,default_t> == false )
-          { result = std::make_unique<default_t>( std::forward<args_t&&>(args)... ); }
-        }
+  template<typename... args_t>
+  static std::unique_ptr<base_t> create(const std::string_view& id, args_t&&... args ) 
+  {
+      std::unique_ptr<base_t> result = nullptr;
 
-        return result;
-    }
+      // if concrete_factory matches with the name, use the concrete factory to create the new instance.
+      std::apply( [&result, &id,... args = std::move(args)](auto&&... tuple_item ) {
+                      (( tuple_item.name == id ? result = tuple_item.create( std::move(args)... ) : result ), ...);
+                  }, concrete_factories{}
+                );
+
+      if ( result == nullptr )
+      {
+        if constexpr ( std::is_same_v<std::nullptr_t,default_t> == false )
+        { result = std::make_unique<default_t>( std::forward<args_t&&>(args)... ); }
+      }
+
+      return result;
+  }
 };
-
 
 } // namespace LIB_VERSION 
 

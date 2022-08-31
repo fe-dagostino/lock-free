@@ -66,7 +66,7 @@ enum class ds_impl_t {
 };
 
 /*********************/
-template<size_t size>
+template<std::size_t size>
 struct tstring_t {
     /***/
     constexpr tstring_t(const char (&str)[size]) 
@@ -75,7 +75,7 @@ struct tstring_t {
     /**
      * Return string length.
      */
-    constexpr size_t      length()  const 
+    constexpr std::size_t      length()  const 
     { return size-1; }
     /**
      * Return a pointer to the null terminated string.
