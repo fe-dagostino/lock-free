@@ -133,10 +133,7 @@ public:
 
   /***/
   constexpr inline reference        operator*() const noexcept
-  {
-    static_assert(get() != pointer());
-    return *get();
-  }
+  { return *get(); }
 
   /***/
   constexpr inline pointer          operator->() const noexcept
