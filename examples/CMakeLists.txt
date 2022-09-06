@@ -28,11 +28,13 @@ if ( LF_ENABLE_CPPCHECK )
   endif()
 endif()
 
+add_executable( abstract_factory             abstract_factory.cpp   )
 add_executable( arena_allocator              arena_allocator.cpp    )
 add_executable( rbuffer                      rbuffer.cpp            )
 add_executable( mqueue                       mqueue.cpp             )
 add_executable( mailbox                      mailbox.cpp            )
 
+target_link_libraries( abstract_factory               ${DEFAULT_LIBRARIES}   )
 target_link_libraries( arena_allocator                ${DEFAULT_LIBRARIES}   )
 target_link_libraries( rbuffer                        ${DEFAULT_LIBRARIES}   )
 target_link_libraries( mqueue                         ${DEFAULT_LIBRARIES}   )

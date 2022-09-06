@@ -68,15 +68,15 @@ public:
       std::unique_ptr<base_t> result = nullptr;
 
       // if concrete_factory matches with the name, use the concrete factory to create the new instance.
-      std::apply( [&result, &id,... args = std::move(args)](auto&&... tuple_item ) {
-                      (( tuple_item.name == id ? result = tuple_item.create( std::move(args)... ) : result ), ...);
+      std::apply( [&result, &id, &args...](auto&&... tuple_item ) {
+                      (( tuple_item.name == id ? result = tuple_item.create( std::forward<args_t>(args)... ) : result ), ...);
                   }, concrete_factories{}
                 );
 
       if ( result == nullptr )
       {
         if constexpr ( std::is_same_v<std::nullptr_t,default_t> == false )
-        { result = std::make_unique<default_t>( std::forward<args_t&&>(args)... ); }
+        { result = std::make_unique<default_t>( std::forward<args_t>(args)... ); }
       }
 
       return result;
