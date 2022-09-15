@@ -78,7 +78,7 @@ public:
     std::vector<char> buffer(buffer_size + 1);        
     std::snprintf(&buffer[0], buffer.size(), format, args ... );
     
-    return std::string( buffer.begin(), buffer.end() );
+    return std::string( buffer.begin(), buffer.end()-1 );
   }
 
   /**
