@@ -75,7 +75,7 @@ struct tstring_t {
     /**
      * Return string length.
      */
-    constexpr std::size_t      length()  const 
+    constexpr std::size_t length()  const 
     { return size-1; }
     /**
      * Return a pointer to the null terminated string.
