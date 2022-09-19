@@ -45,7 +45,8 @@ inline namespace LIB_VERSION {
  *   - updating default, allowing the user to choice a default type to be instantiated or to return `nullptr`
  */
 template<typename base_t, typename default_t, typename... others_t>
-  requires derived_types<base_t,others_t...> 
+  requires derived_types<base_t,others_t...> && 
+           ( std::is_base_of_v<base_t,default_t> || std::is_same_v<default_t,std::nullptr_t> )
 class abstract_factory 
 {
 public:
@@ -65,21 +66,21 @@ public:
   template<typename... args_t>
   static std::unique_ptr<base_t> create(const std::string_view& id, args_t&&... args ) 
   {
-      std::unique_ptr<base_t> result = nullptr;
+    std::unique_ptr<base_t> result = nullptr;
 
-      // if concrete_factory matches with the name, use the concrete factory to create the new instance.
-      std::apply( [&result, &id, &args...](auto&&... tuple_item ) {
-                      (( tuple_item.name == id ? result = tuple_item.create( std::forward<args_t>(args)... ) : result ), ...);
-                  }, concrete_factories{}
-                );
+    // if concrete_factory matches with the name, use the concrete factory to create the new instance.
+    std::apply( [&result, &id, &args...](auto&&... tuple_item ) {
+                    (( tuple_item.name == id ? result = tuple_item.create( std::forward<args_t>(args)... ) : result ), ...);
+                }, concrete_factories{}
+              );
 
-      if ( result == nullptr )
-      {
-        if constexpr ( std::is_same_v<std::nullptr_t,default_t> == false )
-        { result = std::make_unique<default_t>( std::forward<args_t>(args)... ); }
-      }
+    if ( result == nullptr )
+    {
+      if constexpr ( std::is_same_v<std::nullptr_t,default_t> == false )
+      { result = std::make_unique<default_t>( std::forward<args_t>(args)... ); }
+    }
 
-      return result;
+    return result;
   }
 };
 
