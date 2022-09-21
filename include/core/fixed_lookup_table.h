@@ -46,7 +46,7 @@ public:
 
 public:
   /***/
-  constexpr inline fixed_lookup_table()
+  constexpr inline fixed_lookup_table() noexcept
     : _array(nullptr)
   {
     _array = new(std::nothrow) value_type[items];
