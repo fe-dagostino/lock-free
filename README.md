@@ -155,7 +155,7 @@ void th_main_read( mailbox_type* mbx )
 
 * [arena_allocator](https://github.com/fe-dagostino/The-Magicians/blob/master/lock-free/arena_allocator/README.md) (*Spinlock version*): **`allocate()`** and **`deallocate()`** with a complexity of **`O(1)`**.
 * memory_address ...
-* mem_unique_ptr ... *wip*
+* unique_ptr ... 
 * mutex
 * event
 * abstract_factory: an implementation that make use of templates, metaprogramming, concepts and functional to create all at compile-time, since we know all information when we build our program.
