@@ -82,13 +82,14 @@ int main( [[maybe_unused]] int argc, [[maybe_unused]] const char* argv[] )
 { 
   // no default no parameters
   {
-    using factory = core::abstract_factory< base_class, std::nullptr_t, 
+    using factory_t = core::abstract_factory< base_class, std::nullptr_t, 
                                             derived_0, 
-                                            derived_1>; 
+                                            derived_1>;
+    factory_t factory;
 
-    std::unique_ptr<base_class> _ptrBase     = factory::create("undefined");
-    std::unique_ptr<base_class> _ptrDerived0 = factory::create("derived_0");
-    std::unique_ptr<base_class> _ptrDerived1 = factory::create("derived_1");
+    std::unique_ptr<base_class> _ptrBase     = factory.create("undefined");
+    std::unique_ptr<base_class> _ptrDerived0 = factory.create("derived_0");
+    std::unique_ptr<base_class> _ptrDerived1 = factory.create("derived_1");
 
     assert( _ptrBase                 == nullptr      );
     assert( _ptrDerived0->get_name() == "derived_0"  );
@@ -97,13 +98,14 @@ int main( [[maybe_unused]] int argc, [[maybe_unused]] const char* argv[] )
 
   // with default no parameters
   {
-    using factory = core::abstract_factory< base_class, base_class, 
+    using factory_t = core::abstract_factory< base_class, std::nullptr_t, 
                                             derived_0, 
                                             derived_1>;
+    factory_t factory;
 
-    std::unique_ptr<base_class> _ptrBase     = factory::create("undefined");
-    std::unique_ptr<base_class> _ptrDerived0 = factory::create("derived_0");
-    std::unique_ptr<base_class> _ptrDerived1 = factory::create("derived_1");
+    std::unique_ptr<base_class> _ptrBase     = factory.create("undefined");
+    std::unique_ptr<base_class> _ptrDerived0 = factory.create("derived_0");
+    std::unique_ptr<base_class> _ptrDerived1 = factory.create("derived_1");
 
     assert( _ptrBase->get_name()     == "base_class" );
     assert( _ptrDerived0->get_name() == "derived_0"  );
@@ -112,15 +114,16 @@ int main( [[maybe_unused]] int argc, [[maybe_unused]] const char* argv[] )
 
   // with default and parameters
   {
-    using factory = core::abstract_factory< base_class, base_class, 
+    using factory_t = core::abstract_factory< base_class, std::nullptr_t, 
                                             derived_0, 
                                             derived_1>;
+    factory_t factory;
 
-    parameter                   _empty_param;
+    parameter _empty_param;
 
-    std::unique_ptr<base_class> _ptrBase     = factory::create("undefined", "msg base"     , _empty_param );
-    std::unique_ptr<base_class> _ptrDerived0 = factory::create("derived_0", "msg derived_0", _empty_param );
-    std::unique_ptr<base_class> _ptrDerived1 = factory::create("derived_1", "msg derived_1", _empty_param );
+    std::unique_ptr<base_class> _ptrBase     = factory.create("undefined", "msg base"     , _empty_param );
+    std::unique_ptr<base_class> _ptrDerived0 = factory.create("derived_0", "msg derived_0", _empty_param );
+    std::unique_ptr<base_class> _ptrDerived1 = factory.create("derived_1", "msg derived_1", _empty_param );
 
     assert( _ptrBase->get_name()     == "base_class" );
     assert( _ptrDerived0->get_name() == "derived_0"  );
@@ -130,5 +133,19 @@ int main( [[maybe_unused]] int argc, [[maybe_unused]] const char* argv[] )
   std::cout << std::endl;
   std::cout << std::endl;
 
+  using factory_t = core::abstract_factory< base_class, std::nullptr_t, 
+                                          derived_0, 
+                                          derived_1>;
+  factory_t factory;
+
+  while (true)
+  {
+    std::string input;
+    std::cin >> input;
+
+    std::unique_ptr<base_class> _ptrDerived1 = factory.create(input);
+    std::cout << "got instance for " << _ptrDerived1->get_name() << std::endl;
+  }
+  
   return 0;
 }

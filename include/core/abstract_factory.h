@@ -50,6 +50,7 @@ template<typename base_t, typename default_t, typename... others_t>
 class abstract_factory 
 {
 public:
+  /***/
   template<typename derived_t>
     requires plug_name_interface<derived_t>
   struct concrete_factory {
@@ -61,10 +62,25 @@ public:
     {  return std::make_unique<derived_t>( std::forward<args_t&&>(args)... ); }
   };
 
+  /* alias */
   using concrete_factories = std::tuple<concrete_factory<others_t>...>;
 
+  /***/
+  constexpr inline abstract_factory() noexcept
+  {
+    /* Check that all names appears only one time*/
+    constexpr bool all_names_once = all_of( concrete_factories{}, 
+                                            []( const auto& tuple_item ) -> bool { 
+                                              return( count_if( concrete_factories{}, 
+                                                                [&id=tuple_item.name]( const auto& item ) -> std::size_t { 
+                                                                    return (item.name == id); 
+                                                                } ) == 1); 
+                                            }   );
+    static_assert(all_names_once, "name must be unique");
+  }
+
   template<typename... args_t>
-  static std::unique_ptr<base_t> create(const std::string_view& id, args_t&&... args ) 
+  constexpr inline std::unique_ptr<base_t> create(const std::string_view& id, args_t&&... args ) 
   {
     std::unique_ptr<base_t> result = nullptr;
 
