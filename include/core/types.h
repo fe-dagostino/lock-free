@@ -65,25 +65,60 @@ enum class ds_impl_t {
   lockfree
 };
 
+/********************************** SPECIFIC FOR TUPLE ************************************/
+
+
+template <size_t I = 0, typename Func, typename... Ts>
+constexpr std::size_t count_if(std::tuple<Ts...> tuple, Func func ) noexcept
+{
+  if constexpr ( I != sizeof...(Ts) )
+    return func( std::get<I>(tuple) ) + count_if<I + 1>(tuple,func);
+
+  return 0;
+}
+
+template <size_t I = 0, typename Func, typename... Ts>
+constexpr void for_each(std::tuple<Ts...> tuple, Func func ) noexcept
+{
+  if constexpr ( I != sizeof...(Ts) )
+  {
+    func( std::get<I>(tuple) ); 
+    for_each<I + 1>(tuple,func);
+  }
+}
+
+template <size_t I = 0, typename Func, typename... Ts>
+constexpr bool all_of(std::tuple<Ts...> tuple, Func func ) noexcept
+{
+  if constexpr ( I != sizeof...(Ts) )
+  {
+    return func( std::get<I>(tuple) ) && all_of<I + 1>(tuple,func);
+  }
+  
+  return true;
+}
+
+/*****************************************************************************************/
+
 /*********************/
 template<std::size_t size>
 struct tstring_t {
-    /***/
-    constexpr tstring_t(const char (&str)[size]) 
-    { std::copy_n(str, size, _in_string); }
+  /***/
+  constexpr tstring_t(const char (&str)[size]) 
+  { std::copy_n(str, size, _in_string); }
 
-    /**
-     * Return string length.
-     */
-    constexpr std::size_t length()  const 
-    { return size-1; }
-    /**
-     * Return a pointer to the null terminated string.
-     */
-    constexpr const char* c_str() const
-    { return &_in_string[0]; }
+  /**
+   * Return string length.
+   */
+  constexpr std::size_t length()  const 
+  { return size-1; }
+  /**
+   * Return a pointer to the null terminated string.
+   */
+  constexpr const char* c_str() const
+  { return &_in_string[0]; }
 
-    char _in_string[size];
+  char _in_string[size];
 };
 
 /*********************/
