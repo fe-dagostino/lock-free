@@ -36,6 +36,7 @@
 #include <thread>
 #include <atomic>
 #include <condition_variable>
+#include <array>
 
 using namespace std::chrono_literals;
 
@@ -67,16 +68,24 @@ enum class ds_impl_t {
 
 /********************************** SPECIFIC FOR TUPLE ************************************/
 
+/**
+ * @brief Execute if specified function for each tuple element and count all `true`
+ * 
+ * \tparam tuple    tuple on which to iterate
+ * \tparam func     function( auto& tuple_item ) -> bool 
 
+ * @return constexpr std::size_t number of occurrences for `true`
+ */
 template <size_t I = 0, typename Func, typename... Ts>
 constexpr std::size_t count_if(std::tuple<Ts...> tuple, Func func ) noexcept
 {
   if constexpr ( I != sizeof...(Ts) )
-    return func( std::get<I>(tuple) ) + count_if<I + 1>(tuple,func);
+    return (func( std::get<I>(tuple) ) == true) + count_if<I + 1>(tuple,func);
 
   return 0;
 }
 
+/***/
 template <size_t I = 0, typename Func, typename... Ts>
 constexpr void for_each(std::tuple<Ts...> tuple, Func func ) noexcept
 {
@@ -87,18 +96,22 @@ constexpr void for_each(std::tuple<Ts...> tuple, Func func ) noexcept
   }
 }
 
+/** 
+ * @brief Check if specified function is 'true' for each tuple element 
+ * 
+ * \tparam tuple    tuple on which to iterate
+ * \tparam func     function( auto& tuple_item ) -> bool 
+ */
 template <size_t I = 0, typename Func, typename... Ts>
 constexpr bool all_of(std::tuple<Ts...> tuple, Func func ) noexcept
 {
   if constexpr ( I != sizeof...(Ts) )
-  {
-    return func( std::get<I>(tuple) ) && all_of<I + 1>(tuple,func);
-  }
-  
+  { return func( std::get<I>(tuple) ) && all_of<I + 1>(tuple,func); }
+
   return true;
 }
 
-/*****************************************************************************************/
+/********************************** SPECIFIC FOR TUPLE (END) *******************************/
 
 /*********************/
 template<std::size_t size>
