@@ -65,7 +65,13 @@ public:
   static constexpr auto now() noexcept
   { return std::chrono::time_point_cast<T>(std::chrono::steady_clock::now()).time_since_epoch().count(); }
 
-  /***/
+  /**
+   * @brief Return date and time accordingly with specified format.
+   * 
+   * @param fmt  for all possible values refers to https://en.cppreference.com/w/cpp/chrono/c/strftime
+   * 
+   * @return a formatted string or and empty string in case of error
+   */
   static std::string now( const std::string& fmt ) noexcept
   {
     const std::time_t timeNow = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
