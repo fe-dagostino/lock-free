@@ -65,6 +65,23 @@ public:
   static constexpr auto now() noexcept
   { return std::chrono::time_point_cast<T>(std::chrono::steady_clock::now()).time_since_epoch().count(); }
 
+  /***/
+  static std::string now( const std::string& fmt ) noexcept
+  {
+    const std::time_t timeNow = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    std::tm tm = *std::gmtime(&timeNow);
+    
+    char mbstr[100];
+    if (std::strftime(mbstr, sizeof(mbstr), fmt.c_str(), &tm )) 
+    {
+      return std::string(mbstr);
+    }
+
+    return std::string();
+  }
+
+
+  
   /**
    * @brief Waiting std::format to be fully supported.
    */
