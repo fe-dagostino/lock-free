@@ -68,6 +68,19 @@ public:
   }
 
   /**
+   * @brief Wait until a call to signal().
+   *        Note: spuriously unlock can happen even without a signal() call.
+   */
+  inline result_t wait() noexcept
+  {   
+    std::unique_lock<mutex_type> u_lock(_mtx);
+
+    _cv.wait(u_lock); 
+
+    return result_t::eSignaled;
+  }
+
+  /**
    * @brief Signal the event and unlock waiting threads.
    */
   inline void     notify() noexcept
