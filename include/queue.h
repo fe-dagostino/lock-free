@@ -24,7 +24,6 @@
 #ifndef LOCK_FREE_QUEUE_H
 #define LOCK_FREE_QUEUE_H
 
-#include <syncstream>
 #include <array>
 #include <atomic>
 #include <thread>
