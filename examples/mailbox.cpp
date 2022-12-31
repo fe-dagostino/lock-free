@@ -1,5 +1,6 @@
 
 #include <iostream>
+#include <syncstream>
 #include <assert.h>
 
 #include "core/utils.h"
