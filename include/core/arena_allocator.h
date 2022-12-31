@@ -28,6 +28,7 @@
 #include <assert.h>
 
 #include "mutex.h"
+#include "semaphore.h"
 #include "memory_address.h"
 #include "memory_allocators.h"
 #include "fixed_lookup_table.h"
@@ -194,7 +195,7 @@ public:
   constexpr inline arena_allocator( const arena_allocator& ft ) noexcept = delete;
 
   /***/
-  constexpr inline ~arena_allocator() noexcept
+  inline ~arena_allocator() noexcept
   {
     release_instance_index();
 
@@ -677,7 +678,7 @@ private:
   mutable mutex_type          _mtx_next;
 
   std::thread*                _th_alloc;
-  std::binary_semaphore       _sem_th_alloc; 
+  core::binary_semaphore      _sem_th_alloc; 
   std::atomic_bool            _th_alloc_exit;
 };
 
