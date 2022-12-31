@@ -27,6 +27,7 @@
 #include <vector>
 #include <assert.h>
 
+#include "core/semaphore.h"
 #include "core/memory_address.h"
 #include "core/memory_allocators.h"
 #include "core/fixed_lookup_table.h"
@@ -195,10 +196,10 @@ public:
   }
 
   /***/
-  constexpr inline arena_allocator( const arena_allocator& ft ) noexcept = delete;
+  inline arena_allocator( const arena_allocator& ft ) noexcept = delete;
 
   /***/
-  constexpr inline ~arena_allocator() noexcept
+  inline ~arena_allocator() noexcept
   {
     release_instance_index();
 
@@ -680,7 +681,7 @@ private:
   mutable mutex_type          _mtx_mem_chunks;
 
   std::thread*                _th_alloc;
-  std::binary_semaphore       _sem_th_alloc; 
+  core::binary_semaphore      _sem_th_alloc; 
   std::atomic_bool            _th_alloc_exit;
 };
 
