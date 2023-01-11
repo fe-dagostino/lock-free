@@ -37,7 +37,7 @@ inline namespace LIB_VERSION {
 /**
  * @brief Class intended with generic functionality.
  */
-class utils
+class utils final
 {
 public:
   /**
@@ -143,12 +143,24 @@ public:
     for (const auto word : std::views::split(words, delim)) 
     { tokens.emplace_back( std::string_view(word.begin(), word.end()) ); }
     */
-    char *cursor = str.data();
-    char *token  = std::strtok(cursor, delimiters.c_str());
-    while (token) 
+
+    const char* cursor = str.data();
+    const char* head   = nullptr;
+
+    while ( *cursor != '\0' )
     {
-      tokens.emplace_back( token );
-      token = std::strtok(nullptr, delimiters.c_str());
+      while ( strchr( delimiters.c_str(), *cursor ) )
+      { ++cursor; }
+
+      head = cursor++;
+
+      while ( (!strchr( delimiters.c_str(), *cursor )) && (*cursor!='\0') )
+      { ++cursor; }
+      
+      tokens.push_back( std::string(head, (cursor-head) ) );
+
+      if (*cursor!='\0')
+      { ++cursor; }
     }
 
     return true;
