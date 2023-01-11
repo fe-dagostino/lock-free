@@ -288,7 +288,7 @@ public:
    *            limited using size_limit template parameter.
    *         3) service thread is allocating a new memory_chunk or
    *            a different working thread is allocating a memory_cunck,
-   *            this is behaviour is regulated bu alloc_threshold 
+   *            this is behaviour is regulated by alloc_threshold 
    *            template parameter. 
    */
   template< typename... Args > 
