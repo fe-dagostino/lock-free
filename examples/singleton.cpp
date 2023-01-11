@@ -37,7 +37,6 @@ private:
 
 };
 
-
 /**
  * The following program make use of singleton template.
  * This is a sample program to show the flow of calls and to check the interface also.
