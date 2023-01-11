@@ -55,10 +55,6 @@ public:
   using queue_type::size;
   /***/
   using queue_type::empty;
-  /***/
-  using queue_type::lock;
-  /***/
-  using queue_type::unlock;
 
   /***/
   constexpr inline const std::string&  name() const
