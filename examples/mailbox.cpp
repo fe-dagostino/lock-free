@@ -60,6 +60,7 @@ public:
 };
 
 using mailbox_type = lock_free::mailbox<mbx_data, core::ds_impl_t::lockfree, 0>;
+//using mailbox_type = lock_free::mailbox<mbx_data, core::ds_impl_t::mutex, 0>;
 
 void th_main_write( mailbox_type* mbx, [[maybe_unused]] uint32_t run_time_ms )
 {
@@ -154,6 +155,8 @@ int main()
 
   for ( auto& th : vec_readers )
     th.join();
+
+  std::this_thread::sleep_for( 30s );
 
   return 0;
 }
