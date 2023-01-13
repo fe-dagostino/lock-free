@@ -53,7 +53,7 @@ public:
   {}
 
   /***/
-  constexpr inline void release() noexcept
+  inline void release() noexcept
   {
     std::unique_lock<mutex_type> u_lock(_mutex);
 
@@ -65,7 +65,7 @@ public:
   }
 
   /***/
-  constexpr inline void acquire() noexcept
+  inline void acquire() noexcept
   {
     std::unique_lock<mutex_type> u_lock(_mutex);
 
