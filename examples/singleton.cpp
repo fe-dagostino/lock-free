@@ -21,9 +21,9 @@ public:
      log( "(4) ~StdOutput()" );
   }
 protected:
-  constexpr void on_initialize() noexcept 
+  void on_initialize() noexcept 
   { log( "(2) on_initialize()" ); }
-  constexpr void on_finalize()   noexcept 
+  void on_finalize()   noexcept 
   { log( "(3) on_finalize()" ); }
 public:
   void log( const std::string& msg ) noexcept
