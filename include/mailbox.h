@@ -39,11 +39,12 @@ inline namespace LIB_VERSION {
  *        on queue implementation (lockfree, mutex ..) instead the consumer/s rely on condition 
  *        variable and wake up periodically or when a signal occurs.
  */
-template<typename data_t, core::ds_impl_t imp_type, uint32_t size_limit = 0 >
-class mailbox : protected lock_free::queue< data_t, uint32_t, imp_type, 1024, 1024, size_limit >
+template<typename data_t, core::ds_impl_t imp_type, uint32_t size_limit = 0,
+         typename arena_t = lock_free::arena_allocator<core::node_t<data_t,false,true,(imp_type==core::ds_impl_t::lockfree)>, uint32_t, 1024/*chunk_size*/, 1024/*reserve_size*/, size_limit, (1024/*chunk_size*/ / 3), core::default_allocator<uint32_t>> >
+class mailbox : protected lock_free::queue< data_t, uint32_t, imp_type, 1024/*chunk_size*/, 1024 /*reserve_size*/, size_limit, arena_t >
 {
 public:
-  using queue_type = lock_free::queue< data_t, uint32_t, imp_type, 1024, 1024, size_limit >;
+  using queue_type = lock_free::queue< data_t, uint32_t, imp_type, 1024, 1024, size_limit, arena_t >;
   using value_type = data_t;
   
   /***/
