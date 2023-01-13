@@ -45,12 +45,15 @@ public:
   using mutex_type = std::mutex;
   using cv_type    = std::condition_variable;
 
-  inline counting_semaphore( int count = max_count ) noexcept
+  /***/
+  constexpr counting_semaphore() = delete;
+  /***/
+  constexpr inline counting_semaphore( int count = max_count ) noexcept
    : _count(count)
   {}
 
   /***/
-  inline void release() noexcept
+  constexpr inline void release() noexcept
   {
     std::unique_lock<mutex_type> u_lock(_mutex);
 
@@ -62,13 +65,13 @@ public:
   }
 
   /***/
-  inline void acquire() noexcept
+  constexpr inline void acquire() noexcept
   {
     std::unique_lock<mutex_type> u_lock(_mutex);
-    
-    while ( _count > 0 )
+
+    while ( _count == 0 )
       _cv.wait(u_lock);
-    
+
     --_count;
   }
 
