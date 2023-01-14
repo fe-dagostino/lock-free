@@ -26,6 +26,7 @@
 
 #include <vector>
 #include <assert.h>
+#include <semaphore>
 
 #include "core/semaphore.h"
 #include "core/memory_address.h"
@@ -681,7 +682,7 @@ private:
   mutable mutex_type          _mtx_mem_chunks;
 
   std::thread*                _th_alloc;
-  core::binary_semaphore      _sem_th_alloc; 
+  std::binary_semaphore       _sem_th_alloc; 
   std::atomic_bool            _th_alloc_exit;
 };
 
