@@ -30,8 +30,8 @@
 #include <algorithm>
 
 #include <mutex>
+#include "config.h"
 #include "core/mutex.h"
-
 
 #include <thread>
 #include <atomic>
