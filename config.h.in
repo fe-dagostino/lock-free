@@ -1,7 +1,6 @@
 #ifndef LOCK_FREE_CONFIG_H
 #define LOCK_FREE_CONFIG_H
 
-
 #define LIB_VERSION_MAJOR           @lockfree_VERSION_MAJOR@
 #define LIB_VERSION_MINOR           @lockfree_VERSION_MINOR@
 #define LIB_VERSION_PATCH           @lockfree_VERSION_PATCH@
