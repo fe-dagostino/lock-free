@@ -26,7 +26,6 @@
 
 #include "types.h"
 
-
 namespace core {
 
 inline namespace LIB_VERSION {
