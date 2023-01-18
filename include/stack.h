@@ -38,8 +38,6 @@
 
 namespace lock_free {
 
-inline namespace LF_LIB_VERSION {
-
 /***
  * @brief A generic free-lock stack that can be used in different arena_allocator.
  *        Moreover, the same class provides four different implementations in order to cover 
@@ -344,8 +342,6 @@ private:
   arena_type     _arena;
   node_pointer   _head;
 };
-
-} // namespace LF_LIB_VERSION 
 
 }
 

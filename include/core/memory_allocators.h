@@ -38,8 +38,6 @@
 
 namespace core {
 
-inline namespace LF_LIB_VERSION {
-
 /***/
 template<typename data_size_t>
 class default_allocator 
@@ -81,8 +79,6 @@ public:
 #endif
 
 };
-
-} // namespace LF_LIB_VERSION 
 
 }
 

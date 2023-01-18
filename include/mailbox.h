@@ -30,8 +30,6 @@
 
 namespace lock_free {
 
-inline namespace LF_LIB_VERSION {
-
 /**
  * @brief A mailbox implementation.
  *        Useful in circumstances where there is the need to exchanges data between producer 
@@ -89,9 +87,6 @@ private:
   const std::string   _name;
   core::event         _event;
 };
-
-
-} // namespace LF_LIB_VERSION 
 
 }
 

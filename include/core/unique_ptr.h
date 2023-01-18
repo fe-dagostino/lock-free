@@ -32,9 +32,6 @@
 
 namespace core {
 
-inline namespace LF_LIB_VERSION {
-
-
 template<class T, class U>
 concept Derived = std::is_base_of<U, T>::value;
 
@@ -182,8 +179,6 @@ bool operator!=( const unique_ptr<data_t>& lhs, const unique_ptr<data_t>& rhs)
 template<typename data_t>
 bool operator!=(const unique_ptr<data_t>& lhs, std::nullptr_t ) noexcept
 { return (bool)lhs; }
-
-} // namespace LF_LIB_VERSION 
 
 }
 

@@ -42,8 +42,6 @@ using namespace std::chrono_literals;
 
 namespace core {
 
-inline namespace LF_LIB_VERSION {
-
 enum class result_t {
     eFailure         =    0,
     eSuccess         =    1,
@@ -421,8 +419,6 @@ public:
 private:
   mutex_t& _mtx;
 };
-
-} // namespace LF_LIB_VERSION 
 
 }
 

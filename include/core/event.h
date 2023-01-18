@@ -29,8 +29,6 @@
 
 namespace core {
 
-inline namespace LF_LIB_VERSION {
-
 /**
  * @brief An event object based on condition variable.
  */
@@ -91,9 +89,6 @@ private:
   mutex_type  _mtx;
   cv_type     _cv;
 };
-
-
-} // namespace LF_LIB_VERSION 
 
 }
 

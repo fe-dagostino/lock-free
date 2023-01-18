@@ -29,8 +29,6 @@
 
 namespace core {
 
-inline namespace LF_LIB_VERSION {
-
 /**
  * @brief A singleton base class intended to be used in different contexts due to 
  *        the possibility to call constructors with parameters as well as to minimize
@@ -114,8 +112,6 @@ protected:
 private:
   inline static std::unique_ptr<derived_t>   m_instance = nullptr;
 };
-
-} // namespace LF_LIB_VERSION 
 
 }
 

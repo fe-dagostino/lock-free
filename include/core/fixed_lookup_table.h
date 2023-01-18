@@ -32,8 +32,6 @@
 #include "config.h"
 namespace core {
 
-inline namespace LF_LIB_VERSION {
-
 /**
  */
 template< typename data_t, typename data_size_t, data_size_t items, data_t null_value >
@@ -142,8 +140,6 @@ private:
   value_type*   _array;
 
 };
-
-} // namespace LF_LIB_VERSION 
 
 }
 

@@ -32,8 +32,6 @@
 
 namespace core {
 
-inline namespace LF_LIB_VERSION {
-
 template<typename T, bool init = false>
   requires    std::is_same_v<T, std::chrono::nanoseconds>  || std::is_same_v<T, std::chrono::microseconds> 
            || std::is_same_v<T, std::chrono::milliseconds> || std::is_same_v<T, std::chrono::seconds> 
@@ -62,8 +60,6 @@ public:
 private:
   typename T::rep   m_tp;
 };
-
-} // namespace LF_LIB_VERSION 
 
 }
 

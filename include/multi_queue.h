@@ -36,8 +36,6 @@
 
 namespace lock_free {
 
-inline namespace LF_LIB_VERSION {
-
 /***
  * @brief A generic free-lock multi-queue that can be used in different scenarios.
  *        Even there are some design decisiton that have a minimum impact on performances, this
@@ -186,8 +184,6 @@ private:
   std::array<queue_type, queues>  m_array;
   std::atomic<size_type>          m_ndx_pop;
 };
-
-} // namespace LF_LIB_VERSION 
 
 }
 

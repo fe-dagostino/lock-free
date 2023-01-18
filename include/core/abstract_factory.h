@@ -29,8 +29,6 @@
 
 namespace core {
 
-inline namespace LF_LIB_VERSION {
-
 /***
  * Original design and for this class and all credits for that rely on @Quuxplusone, get the link to 
  * the question on Code Review for that:
@@ -99,8 +97,6 @@ public:
     return result;
   }
 };
-
-} // namespace LF_LIB_VERSION 
 
 }
 

@@ -30,8 +30,6 @@
 
 namespace core {
 
-inline namespace LF_LIB_VERSION {
-
 /**
  * @brief A mutex with a spin lock implementation that leverage on atomic<bool>.
  *        This is an alterantive to std::mutex which is based on native mutexes,
@@ -64,9 +62,6 @@ public:
 private:
   std::atomic<bool> _lock;
 };
-
-
-} // namespace LF_LIB_VERSION 
 
 }
 

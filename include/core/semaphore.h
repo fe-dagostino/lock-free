@@ -27,7 +27,6 @@
 #include "config.h"
 #include "core/types.h"
 namespace core {
-inline namespace LF_LIB_VERSION {
 
 /**
  * @brief A semaphore implementation that leverage on mutex and condition variable.
@@ -81,8 +80,6 @@ private:
 };
 
 typedef counting_semaphore<1> binary_semaphore;
-
-} // namespace LF_LIB_VERSION 
 
 }
 

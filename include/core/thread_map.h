@@ -30,8 +30,6 @@
 
 namespace core {
 
-inline namespace LF_LIB_VERSION {
-
 /**
  * @brief Generating an unique ID for each thread instance.
  * 
@@ -86,8 +84,6 @@ private:
 
   size_type   _counter;
 };
-
-} // namespace LF_LIB_VERSION 
 
 }
 

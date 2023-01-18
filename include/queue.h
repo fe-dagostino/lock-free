@@ -37,8 +37,6 @@
 
 namespace lock_free {
 
-inline namespace LF_LIB_VERSION {
-
 /***
  * @brief A generic free-lock queue that can be used in different arena_allocator.
  *        Moreover, the same class provides four different implementations in order to cover 
@@ -375,8 +373,6 @@ private:
   node_pointer   _tail;
   
 };
-
-} // namespace LF_LIB_VERSION 
 
 }
 

@@ -34,8 +34,6 @@
 
 namespace core {
 
-inline namespace LF_LIB_VERSION {
-
 /**
  * @brief A data structure used as wrapper for a pointer.
  *        On 64 bits architeture leverage unused bits for different usage.
@@ -197,8 +195,6 @@ protected:
   addreess_type  _addr2;
 
 };
-
-} // namespace LF_LIB_VERSION 
 
 }
 
