@@ -29,6 +29,7 @@
 #include <assert.h>
 #include <cstddef>
 
+#include "config.h"
 #include "queue.h"
 #include "core/arena_allocator.h"
 #include "core/thread_map.h"

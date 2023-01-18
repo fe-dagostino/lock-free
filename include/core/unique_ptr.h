@@ -26,6 +26,7 @@
 
 #include <memory>
 
+#include "config.h"
 #include "memory_address.h"
 
 

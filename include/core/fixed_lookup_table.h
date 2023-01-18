@@ -29,6 +29,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "config.h"
 namespace core {
 
 inline namespace LF_LIB_VERSION {

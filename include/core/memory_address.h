@@ -29,6 +29,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "config.h"
 #include "types.h"
 
 namespace core {

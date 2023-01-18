@@ -26,6 +26,7 @@
 
 #include <chrono>
 
+#include "config.h"
 #include "core/types.h"
 #include "core/utils.h"
 

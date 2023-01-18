@@ -24,9 +24,9 @@
 #ifndef CORE_THREAD_MAP_H
 #define CORE_THREAD_MAP_H
 
+#include "config.h"
 #include "types.h"
 #include <unordered_map>
-
 
 namespace core {
 

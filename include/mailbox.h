@@ -24,6 +24,7 @@
 #ifndef CORE_MAILBOX_H
 #define CORE_MAILBOX_H
 
+#include "config.h"
 #include "queue.h"
 #include "core/event.h"
 

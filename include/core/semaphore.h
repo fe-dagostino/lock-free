@@ -24,10 +24,9 @@
 #ifndef CORE_SEMAPHORE_H
 #define CORE_SEMAPHORE_H
 
+#include "config.h"
 #include "core/types.h"
-
 namespace core {
-
 inline namespace LF_LIB_VERSION {
 
 /**

@@ -27,8 +27,7 @@
 #include <array>
 #include <atomic>
 
-//delete
-#include<iostream>
+#include "config.h"
 
 namespace lock_free {
 

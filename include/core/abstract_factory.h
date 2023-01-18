@@ -24,7 +24,8 @@
 #ifndef CORE_ABSTRACT_FACTORY_H
 #define CORE_ABSTRACT_FACTORY_H
 
-#include "types.h"
+#include "config.h"
+#include "core/types.h"
 
 namespace core {
 

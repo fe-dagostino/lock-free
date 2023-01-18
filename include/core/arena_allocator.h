@@ -28,11 +28,12 @@
 #include <assert.h>
 #include <semaphore>
 
-#include "mutex.h"
-#include "semaphore.h"
-#include "memory_address.h"
-#include "memory_allocators.h"
-#include "fixed_lookup_table.h"
+#include "config.h"
+#include "core/mutex.h"
+#include "core/semaphore.h"
+#include "core/memory_address.h"
+#include "core/memory_allocators.h"
+#include "core/fixed_lookup_table.h"
 
 namespace core {
 

@@ -24,6 +24,7 @@
 #ifndef CORE_SINGLETON_H
 #define CORE_SINGLETON_H
 
+#include "config.h"
 #include "types.h"
 
 namespace core {

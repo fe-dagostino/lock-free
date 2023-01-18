@@ -24,6 +24,7 @@
 #ifndef CORE_UTILS_H
 #define CORE_UTILS_H
 
+#include "config.h"
 #include "core/types.h"
 #include <cstring>
 #include <vector>
@@ -165,8 +166,6 @@ public:
 
     return true;
   }
-
-
 };
 
 } // namespace LF_LIB_VERSION 

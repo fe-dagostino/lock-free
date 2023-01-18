@@ -28,6 +28,7 @@
 #include <assert.h>
 #include <semaphore>
 
+#include "config.h"
 #include "core/semaphore.h"
 #include "core/memory_address.h"
 #include "core/memory_allocators.h"

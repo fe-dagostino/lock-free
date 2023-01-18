@@ -30,6 +30,7 @@
 #include <assert.h>
 #include <cstddef>
 
+#include "config.h"
 #include "arena_allocator.h"
 #include "core/arena_allocator.h"
 #include "core/types.h"

@@ -26,6 +26,8 @@
 
 #include <atomic>
 
+#include "config.h"
+
 namespace core {
 
 inline namespace LF_LIB_VERSION {
