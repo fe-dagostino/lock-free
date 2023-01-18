@@ -28,7 +28,7 @@
 
 namespace core {
 
-inline namespace LIB_VERSION {
+inline namespace LF_LIB_VERSION {
 
 /**
  * @brief A mutex with a spin lock implementation that leverage on atomic<bool>.
@@ -64,7 +64,7 @@ private:
 };
 
 
-} // namespace LIB_VERSION 
+} // namespace LF_LIB_VERSION 
 
 }
 

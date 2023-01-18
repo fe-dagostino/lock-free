@@ -28,7 +28,7 @@
 
 namespace core {
 
-inline namespace LIB_VERSION {
+inline namespace LF_LIB_VERSION {
 
 /***
  * Original design and for this class and all credits for that rely on @Quuxplusone, get the link to 
@@ -99,7 +99,7 @@ public:
   }
 };
 
-} // namespace LIB_VERSION 
+} // namespace LF_LIB_VERSION 
 
 }
 

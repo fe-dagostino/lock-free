@@ -31,7 +31,7 @@
 
 namespace core {
 
-inline namespace LIB_VERSION {
+inline namespace LF_LIB_VERSION {
 
 /**
  */
@@ -142,7 +142,7 @@ private:
 
 };
 
-} // namespace LIB_VERSION 
+} // namespace LF_LIB_VERSION 
 
 }
 

@@ -37,7 +37,7 @@
 
 namespace lock_free {
 
-inline namespace LIB_VERSION {
+inline namespace LF_LIB_VERSION {
 
 /***
  * @brief A generic free-lock stack that can be used in different arena_allocator.
@@ -344,7 +344,7 @@ private:
   node_pointer   _head;
 };
 
-} // namespace LIB_VERSION 
+} // namespace LF_LIB_VERSION 
 
 }
 

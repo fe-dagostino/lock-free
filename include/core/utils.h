@@ -32,7 +32,7 @@ using namespace std::chrono_literals;
 
 namespace core {
 
-inline namespace LIB_VERSION {
+inline namespace LF_LIB_VERSION {
 
 /**
  * @brief Class intended with generic functionality.
@@ -169,8 +169,7 @@ public:
 
 };
 
-
-} // namespace LIB_VERSION 
+} // namespace LF_LIB_VERSION 
 
 }
 

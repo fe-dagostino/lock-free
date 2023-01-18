@@ -28,7 +28,7 @@
 
 namespace core {
 
-inline namespace LIB_VERSION {
+inline namespace LF_LIB_VERSION {
 
 /**
  * @brief A semaphore implementation that leverage on mutex and condition variable.
@@ -83,7 +83,7 @@ private:
 
 typedef counting_semaphore<1> binary_semaphore;
 
-} // namespace LIB_VERSION 
+} // namespace LF_LIB_VERSION 
 
 }
 

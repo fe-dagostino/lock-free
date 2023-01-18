@@ -35,7 +35,7 @@
 
 namespace lock_free {
 
-inline namespace LIB_VERSION {
+inline namespace LF_LIB_VERSION {
 
 /***
  * @brief A generic free-lock multi-queue that can be used in different scenarios.
@@ -186,7 +186,7 @@ private:
   std::atomic<size_type>          m_ndx_pop;
 };
 
-} // namespace LIB_VERSION 
+} // namespace LF_LIB_VERSION 
 
 }
 

@@ -33,7 +33,7 @@
 
 namespace core {
 
-inline namespace LIB_VERSION {
+inline namespace LF_LIB_VERSION {
 
 /**
  * @brief A data structure used as wrapper for a pointer.
@@ -197,7 +197,7 @@ protected:
 
 };
 
-} // namespace LIB_VERSION 
+} // namespace LF_LIB_VERSION 
 
 }
 

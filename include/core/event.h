@@ -28,7 +28,7 @@
 
 namespace core {
 
-inline namespace LIB_VERSION {
+inline namespace LF_LIB_VERSION {
 
 /**
  * @brief An event object based on condition variable.
@@ -92,7 +92,7 @@ private:
 };
 
 
-} // namespace LIB_VERSION 
+} // namespace LF_LIB_VERSION 
 
 }
 

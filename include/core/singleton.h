@@ -28,7 +28,7 @@
 
 namespace core {
 
-inline namespace LIB_VERSION {
+inline namespace LF_LIB_VERSION {
 
 /**
  * @brief A singleton base class intended to be used in different contexts due to 
@@ -114,7 +114,7 @@ private:
   inline static std::unique_ptr<derived_t>   m_instance = nullptr;
 };
 
-} // namespace LIB_VERSION 
+} // namespace LF_LIB_VERSION 
 
 }
 

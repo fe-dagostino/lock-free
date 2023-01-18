@@ -29,7 +29,7 @@
 
 namespace lock_free {
 
-inline namespace LIB_VERSION {
+inline namespace LF_LIB_VERSION {
 
 /**
  * @brief A mailbox implementation.
@@ -90,7 +90,7 @@ private:
 };
 
 
-} // namespace LIB_VERSION 
+} // namespace LF_LIB_VERSION 
 
 }
 

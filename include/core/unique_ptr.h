@@ -31,7 +31,7 @@
 
 namespace core {
 
-inline namespace LIB_VERSION {
+inline namespace LF_LIB_VERSION {
 
 
 template<class T, class U>
@@ -182,7 +182,7 @@ template<typename data_t>
 bool operator!=(const unique_ptr<data_t>& lhs, std::nullptr_t ) noexcept
 { return (bool)lhs; }
 
-} // namespace LIB_VERSION 
+} // namespace LF_LIB_VERSION 
 
 }
 

@@ -35,7 +35,7 @@
 
 namespace lock_free {
 
-inline namespace LIB_VERSION {
+inline namespace LF_LIB_VERSION {
 
 /***
  * An arena_allocator implementation that keep both alloc() and dealloc() to a complexity of O(1).
@@ -698,7 +698,7 @@ requires std::is_unsigned_v<data_size_t> && (std::is_same_v<data_size_t,uint32_t
 typename arena_allocator<data_t,data_size_t,chunk_size,initial_size,size_limit,alloc_threshold,allocator_t>::lookup_table_type          
   arena_allocator<data_t,data_size_t,chunk_size,initial_size,size_limit,alloc_threshold,allocator_t>::instances_table;
 
-} // namespace LIB_VERSION 
+} // namespace LF_LIB_VERSION 
 
 }
 

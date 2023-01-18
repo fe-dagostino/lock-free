@@ -36,7 +36,7 @@
 
 namespace lock_free {
 
-inline namespace LIB_VERSION {
+inline namespace LF_LIB_VERSION {
 
 /***
  * @brief A generic free-lock queue that can be used in different arena_allocator.
@@ -375,7 +375,7 @@ private:
   
 };
 
-} // namespace LIB_VERSION 
+} // namespace LF_LIB_VERSION 
 
 }
 

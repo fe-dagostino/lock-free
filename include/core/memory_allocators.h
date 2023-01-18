@@ -36,7 +36,7 @@
 
 namespace core {
 
-inline namespace LIB_VERSION {
+inline namespace LF_LIB_VERSION {
 
 /***/
 template<typename data_size_t>
@@ -80,8 +80,7 @@ public:
 
 };
 
-
-} // namespace LIB_VERSION 
+} // namespace LF_LIB_VERSION 
 
 }
 
