@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
 
-set(libname "lockfree")
+set(lf_libname "lockfree")
 
 # Set the project name and language
-project( ${libname}
+project( ${lf_libname}
          VERSION 0.1.0
          DESCRIPTION "lock-free data structures."
          LANGUAGES CXX C
@@ -41,14 +41,14 @@ endif()
 
 
 if( CMAKE_BUILD_TYPE STREQUAL "Debug" )
-  set(  LIB_VERSION_SO        -${CMAKE_PROJECT_VERSION}-debug          )
-  set(  LIB_VERSION_A         -${CMAKE_PROJECT_VERSION}-static-debug   )
+  set(  LF_LIB_VERSION_SO        -${CMAKE_PROJECT_VERSION}-debug          )
+  set(  LF_LIB_VERSION_A         -${CMAKE_PROJECT_VERSION}-static-debug   )
 else()
-  set(  LIB_VERSION_SO        -${CMAKE_PROJECT_VERSION}                )
-  set(  LIB_VERSION_A         -${CMAKE_PROJECT_VERSION}-static         )
+  set(  LF_LIB_VERSION_SO        -${CMAKE_PROJECT_VERSION}                )
+  set(  LF_LIB_VERSION_A         -${CMAKE_PROJECT_VERSION}-static         )
 endif()
 
-set(  LIB_BINARY_DIR 
+set(  LF_LIB_BINARY_DIR 
       ${CMAKE_CURRENT_BINARY_DIR}
    )
 
@@ -66,45 +66,41 @@ else()
   add_compile_options( -march=native -mtune=native -Wall -Wextra -pedantic )
   add_link_options( -lm -lpthread -latomic )
   
-  set(  EXT_LIBRARIES
-
-  )
-  
   if( CMAKE_BUILD_TYPE STREQUAL "Release" )
   add_compile_options( -O3 )
   endif()
 endif()
 
-option(LF_BUILD_BENCHMARKS "Enable/Disable benchmarks build" OFF)
-option(LF_BUILD_EXAMPLES   "Enable/Disable examples build"   OFF)
-option(LF_BUILD_TESTS      "Enable/Disable tests build"      OFF)
+option(LF_BUILD_BENCHMARKS "Enable/Disable benchmarks build"  OFF)
+option(LF_BUILD_EXAMPLES   "Enable/Disable examples build"    OFF)
+option(LF_BUILD_TESTS      "Enable/Disable tests build"       OFF)
 
 file( GLOB_RECURSE 
       LIB_INCLUDE
       ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h
     )
-
+    
 file( GLOB_RECURSE 
       LIB_SRC
       ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
     )
 
-#add_library   ( ${libname}${LIB_VERSION_SO}   SHARED ${LIB_SRC} )
-#add_library   ( ${libname}${LIB_VERSION_A}    STATIC ${LIB_SRC} )
+#add_library   ( ${lf_libname}${LIB_VERSION_SO}   SHARED ${LIB_SRC} )
+#add_library   ( ${lf_libname}${LIB_VERSION_A}    STATIC ${LIB_SRC} )
 
-#target_link_libraries( ${libname}${LIB_VERSION_SO}  ${EXT_LIBRARIES} )
-#target_link_libraries( ${libname}${LIB_VERSION_A}   ${EXT_LIBRARIES} )
-#target_link_libraries( ${libname}${LIB_VERSION_SO}  ${CMAKE_DL_LIBS} )
-#target_link_libraries( ${libname}${LIB_VERSION_A}   ${CMAKE_DL_LIBS} )
+#target_link_libraries( ${lf_libname}${LIB_VERSION_SO}  ${EXT_LIBRARIES} )
+#target_link_libraries( ${lf_libname}${LIB_VERSION_A}   ${EXT_LIBRARIES} )
+#target_link_libraries( ${lf_libname}${LIB_VERSION_SO}  ${CMAKE_DL_LIBS} )
+#target_link_libraries( ${lf_libname}${LIB_VERSION_A}   ${CMAKE_DL_LIBS} )
 
-#target_include_directories( ${libname}${LIB_VERSION_SO}
+#target_include_directories( ${lf_libname}${LIB_VERSION_SO}
 #                            PUBLIC
 #                              $<INSTALL_INTERFACE:include>
 #                              $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 #                            PRIVATE
 #                              ${CMAKE_CURRENT_SOURCE_DIR}/src
 #                          )
-#target_include_directories( ${libname}${LIB_VERSION_A}
+#target_include_directories( ${lf_libname}${LIB_VERSION_A}
 #                            PUBLIC
 #                              $<INSTALL_INTERFACE:include>
 #                              $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

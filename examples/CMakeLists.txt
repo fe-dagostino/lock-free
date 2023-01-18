@@ -6,7 +6,7 @@ project( examples
 
 # Add the temporary output directories to the library path to make sure that
 # parent files can be found, even if it is not installed system-wide yet.
-LINK_DIRECTORIES( ${LIB_BINARY_DIR} )
+LINK_DIRECTORIES( ${LF_LIB_BINARY_DIR} )
 
 set(  DEFAULT_LIBRARIES
       atomic

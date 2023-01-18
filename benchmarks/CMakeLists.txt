@@ -6,7 +6,7 @@ project( benchmarks
 
 # Add the temporary output directories to the library path to make sure that
 # parent files can be found, even if it is not installed system-wide yet.
-LINK_DIRECTORIES( ${LIB_BINARY_DIR} )
+LINK_DIRECTORIES( ${LF_LIB_BINARY_DIR} )
 
 include(FetchContent)
 
@@ -57,8 +57,12 @@ add_executable( bm_mt_arena_allocator_stress             bm_mt_arena_allocator_s
 add_executable( bm_mt_queue                              bm_mt_queue.cpp                  )
 add_executable( bm_mt_stack                              bm_mt_stack.cpp                  )
 
+#add_executable( bm_mt_fim                                bm_mt_fim.cpp                  )
+
 target_link_libraries( bm_arena_allocator                ${DEFAULT_LIBRARIES}         )
 target_link_libraries( bm_mt_arena_allocator             ${DEFAULT_LIBRARIES}         )
 target_link_libraries( bm_mt_arena_allocator_stress      ${DEFAULT_LIBRARIES}         )
 target_link_libraries( bm_mt_queue                       ${DEFAULT_LIBRARIES}         )
 target_link_libraries( bm_mt_stack                       ${DEFAULT_LIBRARIES}         )
+
+#target_link_libraries( bm_mt_fim                       ${DEFAULT_LIBRARIES}         )
