@@ -59,7 +59,7 @@ public:
   constexpr auto peek() const noexcept
   { return (core::utils::now<T>()-m_tp); }
 private:
-  T::rep   m_tp;
+  typename T::rep   m_tp;
 };
 
 } // namespace LF_LIB_VERSION 
