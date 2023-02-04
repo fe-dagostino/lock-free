@@ -142,6 +142,10 @@ public:
   { return _ptr; }
 
   /***/
+  constexpr inline operator pointer() const noexcept
+  { return get(); }
+
+  /***/
   constexpr inline bool             auto_delete() const noexcept
   { return mem_address::test_flag( _ptr, mem_address::address_flags::DESTROY) ; }
   /***/
