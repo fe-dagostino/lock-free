@@ -44,15 +44,15 @@ class singleton_t
 public:  
   /**
    * @brief This method must be called once when the program start its execution.
-   *        initialize() allow to call a derived_t contructor with an arbitrary number of arguments.
-   *        Once the instance is ready and static memory have been initialized, then the on_initialize() method
+   *        initialize() allow to call a derived_t constructor with an arbitrary number of arguments.
+   *        Once the instance is ready and static memory have been initialised, then the on_initialize() method
    *        will be invoked in order to allow other operations that maybe required during initialization.
    *        derived_t's constructors can be kept protected using just using friend class declaration.
    * 
    * @return true   if the singleton instance have been instantiated and initializated, since this moment each
    *                access to the instance should be done using get_instance() method.
    * @return false  if initialize() have been already called, or if there is an no available memory to create
-   *                the singleson instance.
+   *                the singleton instance.
    */
   template<typename... args_t>
   static bool   initialize( args_t&&... args ) noexcept
@@ -88,7 +88,7 @@ public:
   { return m_instance.get(); }
 
   /**
-   * @brief This method is intended to be called at the end of the program exectution
+   * @brief This method is intended to be called at the end of the program execution
    *        in order to release resources or any other operation required before to exit
    *        the process.
    */
@@ -97,15 +97,15 @@ public:
 
 protected:  
   /**
-   * @brief invoked by initialize(), this method if defined in derived_t will be overrided, 
+   * @brief invoked by initialize(), this method if defined in derived_t will be overridden, 
    *        so derived_t::on_initialize() will be invoked. If not defined in derived_t then
-   *        this implementation will be the defalt and will do nothing.
+   *        this implementation will be the default and will do nothing.
    */
   constexpr void on_initialize() noexcept { }
   /**
-   * @brief invoked by finalize(), this method if defined in derived_t will be overrided, 
+   * @brief invoked by finalize(), this method if defined in derived_t will be overridden, 
    *        so derived_t::on_finalize() will be invoked. If not defined in derived_t then
-   *        this implementation will be the defalt and will do nothing.
+   *        this implementation will be the default and will do nothing.
    */
   constexpr void on_finalize()   noexcept { }
 
