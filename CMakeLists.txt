@@ -85,28 +85,12 @@ file( GLOB_RECURSE
       ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
     )
 
-#add_library   ( ${lf_libname}${LIB_VERSION_SO}   SHARED ${LIB_SRC} )
-#add_library   ( ${lf_libname}${LIB_VERSION_A}    STATIC ${LIB_SRC} )
-
-#target_link_libraries( ${lf_libname}${LIB_VERSION_SO}  ${EXT_LIBRARIES} )
-#target_link_libraries( ${lf_libname}${LIB_VERSION_A}   ${EXT_LIBRARIES} )
-#target_link_libraries( ${lf_libname}${LIB_VERSION_SO}  ${CMAKE_DL_LIBS} )
-#target_link_libraries( ${lf_libname}${LIB_VERSION_A}   ${CMAKE_DL_LIBS} )
-
-#target_include_directories( ${lf_libname}${LIB_VERSION_SO}
-#                            PUBLIC
-#                              $<INSTALL_INTERFACE:include>
-#                              $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-#                            PRIVATE
-#                              ${CMAKE_CURRENT_SOURCE_DIR}/src
-#                          )
-#target_include_directories( ${lf_libname}${LIB_VERSION_A}
-#                            PUBLIC
-#                              $<INSTALL_INTERFACE:include>
-#                              $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-#                            PRIVATE
-#                              ${CMAKE_CURRENT_SOURCE_DIR}/src
-#                          )
+add_library ( ${lf_libname}  INTERFACE )
+target_include_directories( ${lf_libname}
+                            INTERFACE
+                              $<INSTALL_INTERFACE:include>
+                              $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+                          )
 
 if ( LF_BUILD_BENCHMARKS )
   add_subdirectory(benchmarks)
