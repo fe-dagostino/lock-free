@@ -91,6 +91,10 @@ target_include_directories( ${lf_libname}
                               $<INSTALL_INTERFACE:include>
                               $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
                           )
+install(
+        DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
+        DESTINATION include/${lf_libname}
+)
 
 if ( LF_BUILD_BENCHMARKS )
   add_subdirectory(benchmarks)
