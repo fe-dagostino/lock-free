@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-set(lf_libname "lockfree")
+set(lf_libname "lock-free")
 
 # Set the project name and language
 project( ${lf_libname}
