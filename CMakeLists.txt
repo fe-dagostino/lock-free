@@ -88,6 +88,12 @@ file( GLOB_RECURSE
 add_library ( ${lf_libname}  INTERFACE )
 set_target_properties(${lf_libname} PROPERTIES PUBLIC_HEADER "${LIB_INCLUDE}" )
 
+target_include_directories( ${lf_libname}
+                            INTERFACE
+                            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+                            $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
+
 install(
         TARGETS ${lf_libname}
         LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/
