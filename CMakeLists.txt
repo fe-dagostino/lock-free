@@ -84,7 +84,7 @@ file( GLOB_RECURSE
     )
 
 add_library ( ${lf_libname}  INTERFACE )
-target_include_directories( ${lf_libname} PUBLIC ${CMAKE_SOURCE_DIR}/include )
+target_include_directories( ${lf_libname} INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include )
 
 install( TARGETS ${lf_libname}  ARCHIVE DESTINATION lib )
 install( FILES   ${LIB_INCLUDE} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} ) 
