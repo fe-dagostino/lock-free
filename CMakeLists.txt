@@ -94,19 +94,8 @@ target_include_directories( ${lf_libname}
                             $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
-install(
-        TARGETS ${lf_libname}
-        LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/include/${lf_libname}
-)
-
-set( package_files include/ src/ CMakeLists.txt  LICENSE )
-add_custom_command( OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${lf_libname}-src.zip     
-                    COMMAND ${CMAKE_COMMAND} -E tar c ${CMAKE_CURRENT_BINARY_DIR}/${lf_libname}-src.zip --format=zip -- ${package_files}
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}    
-                    DEPENDS ${package_files} 
-                  )
-add_custom_target ( ${lf_libname}_package DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${lf_libname}-src.zip )
+install( TARGETS ${lf_libname}  ARCHIVE DESTINATION lib )
+install( FILES   ${LIB_INCLUDE} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} ) 
 
 if ( LF_BUILD_BENCHMARKS )
   add_subdirectory(benchmarks)
