@@ -11,8 +11,6 @@ project( ${lf_libname}
 
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_SOURCE_DIR}/include/config.h)
 
-target_include_directories( ${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/include )
-
 # uncomment to set a default CXX standard for the external tools like clang-tidy and cppcheck
 # and the targets that do not specify a standard.
 # If not set, the latest supported standard for your compiler is used
@@ -86,13 +84,7 @@ file( GLOB_RECURSE
     )
 
 add_library ( ${lf_libname}  INTERFACE )
-set_target_properties(${lf_libname} PROPERTIES PUBLIC_HEADER "${LIB_INCLUDE}" )
-
-target_include_directories( ${lf_libname}
-                            INTERFACE
-                            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-                            $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-)
+target_include_directories( ${lf_libname} PUBLIC ${CMAKE_SOURCE_DIR}/include )
 
 install( TARGETS ${lf_libname}  ARCHIVE DESTINATION lib )
 install( FILES   ${LIB_INCLUDE} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} ) 
