@@ -84,6 +84,7 @@ file( GLOB_RECURSE
     )
 
 add_library ( ${lf_libname}  INTERFACE )
+add_library ( ${lf_libname}::${lf_libname} ALIAS ${lf_libname} )
 target_include_directories( ${lf_libname} INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include )
 
 include(GNUInstallDirs)
