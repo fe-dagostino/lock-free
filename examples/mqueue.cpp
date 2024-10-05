@@ -20,7 +20,7 @@ int main( int argc, const char* argv[] )
   (void)argc;
   (void)argv;
 
-  const uint32_t single_thread_repeat = 5000000;
+  const uint32_t single_thread_repeat = 1000000;
   const uint32_t nthreads = 8;
 
   lock_free::multi_queue<u_int64_t,uint32_t, nthreads,1000000,5000000,0>  mqueue;
@@ -36,7 +36,7 @@ int main( int argc, const char* argv[] )
     prod_X[tid] = new std::thread( [&](uint32_t th_num ){
 
       auto tp_start_ms = core::utils::now<std::chrono::milliseconds>();
-
+      
       uint32_t conflicts = 0;
       uint32_t counter = 0;
       while (counter++ < single_thread_repeat)
@@ -44,10 +44,7 @@ int main( int argc, const char* argv[] )
         auto tp_now = core::utils::now<std::chrono::nanoseconds>();
 
         // enqueue in a well defined queue_id
-        //if ( mqueue.push( th_num, tp_now) != core::result_t::eSuccess)
-        
-        // distributing load based on thread::id
-        if ( mqueue.push( tp_now ) != core::result_t::eSuccess)
+        if ( mqueue.push( th_num, tp_now) != core::result_t::eSuccess)
           ++conflicts;
       }
 
@@ -58,6 +55,8 @@ int main( int argc, const char* argv[] )
     }, tid );
   }
   
+  ////////////////////////
+  // Wait until all thread completed to push
   for ( uint32_t tid = 0; tid < nthreads; ++tid )
   {
     prod_X[tid]->join();
@@ -66,7 +65,7 @@ int main( int argc, const char* argv[] )
   ////////////////////////
   // Read END TIME
   auto tp_end_ms = core::utils::now<std::chrono::milliseconds>();
-  std::cout << "duration: " << double(tp_end_ms-tp_start_ms)/1000 << std::endl;
+  std::cout << "total push duration: " << double(tp_end_ms-tp_start_ms)/1000 << std::endl;
 
 
   //////////////////////////////////////////////

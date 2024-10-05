@@ -59,10 +59,10 @@ add_executable( bm_mt_stack                              bm_mt_stack.cpp        
 
 #add_executable( bm_mt_fim                                bm_mt_fim.cpp                  )
 
-target_link_libraries( bm_arena_allocator                ${DEFAULT_LIBRARIES}         )
-target_link_libraries( bm_mt_arena_allocator             ${DEFAULT_LIBRARIES}         )
-target_link_libraries( bm_mt_arena_allocator_stress      ${DEFAULT_LIBRARIES}         )
-target_link_libraries( bm_mt_queue                       ${DEFAULT_LIBRARIES}         )
-target_link_libraries( bm_mt_stack                       ${DEFAULT_LIBRARIES}         )
+target_link_libraries( bm_arena_allocator                ${DEFAULT_LIBRARIES} ${lf_libname}::${lf_libname} )
+target_link_libraries( bm_mt_arena_allocator             ${DEFAULT_LIBRARIES} ${lf_libname}::${lf_libname} )
+target_link_libraries( bm_mt_arena_allocator_stress      ${DEFAULT_LIBRARIES} ${lf_libname}::${lf_libname} )
+target_link_libraries( bm_mt_queue                       ${DEFAULT_LIBRARIES} ${lf_libname}::${lf_libname} )
+target_link_libraries( bm_mt_stack                       ${DEFAULT_LIBRARIES} ${lf_libname}::${lf_libname} )
 
 #target_link_libraries( bm_mt_fim                       ${DEFAULT_LIBRARIES}         )

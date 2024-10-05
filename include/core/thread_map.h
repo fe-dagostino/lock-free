@@ -51,16 +51,16 @@ public:
   constexpr inline thread_map() noexcept
     : _counter(base)
   {}
-  
+
   /***/
   constexpr inline size_type add( const value_type& tid = std::this_thread::get_id() ) noexcept
   {
+    std::lock_guard _mtx_ctrl(_mtx);
+
     if ( _map.contains(tid) )
       return _map[tid];
     
-    _mtx.lock();
     _map[tid] = ++_counter;
-    _mtx.unlock();
 
     return _counter;
   }
@@ -68,12 +68,12 @@ public:
   /***/
   constexpr inline bool      del( const value_type& tid = std::this_thread::get_id() ) noexcept
   {
+    std::lock_guard _mtx_ctrl(_mtx);
+
     if ( _map.contains(tid) == false )
       return false;
     
-    _mtx.lock();
     _map.erase(tid);
-    _mtx.unlock();
 
     return true;
   }
