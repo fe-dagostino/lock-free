@@ -174,6 +174,44 @@ struct are_base_of
 /*********************/
 
 /**
+ * @brief std::is_same extended for multiple types
+ */
+template<typename base_t, typename... others_t>
+struct is_same_of
+{ constexpr static const bool value = std::disjunction_v<std::is_same<base_t,others_t>... >; };
+
+/*********************/
+
+/**
+ * @brief using std::max over multiple data types in order to retrieve the 
+ */
+template<typename ...types_t>
+struct max_size_of
+{ static const std::size_t value = std::max( { sizeof(types_t)... } ); };
+
+/*********************/
+
+/**
+ * @brief create a bytes array with size equal to the max of (types_t) and 
+ *        automatically create a type cast operator that statically reintepret the same 
+ *        memory area.
+ */
+template<typename ...types_t>
+struct union_t
+{
+  using data_t = unsigned char;
+
+  template<typename type_t>
+    requires is_same_of<type_t,types_t...>::value
+  operator type_t*()
+  { return static_cast<type_t*>(static_cast<void*>(data)); }
+
+  data_t  data[max_size_of<types_t...>::value];
+};
+
+/*********************/
+
+/**
  * @brief Define concept checking that all @tparamother_t types are derived from @base_t.
  */
 template<typename base_t, typename... others_t>
