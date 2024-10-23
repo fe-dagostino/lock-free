@@ -179,7 +179,7 @@ public:
     if constexpr (plug_mutex_type::has_mutex==true)
     { 
       do{
-      } while ( !plug_mutex_type::try_lock() );
+      } while ( !plug_mutex_type::template try_lock<0>() );
       
       return core::result_t::eSuccess;
     }
@@ -197,7 +197,7 @@ public:
   {
     if constexpr (plug_mutex_type::has_mutex==true)
     { 
-      plug_mutex_type::unlock(); 
+      plug_mutex_type::template unlock<0>(); 
       return core::result_t::eSuccess;
     }
 

@@ -241,28 +241,40 @@ concept mutex_interface = requires( M& m )
  * @tparam add_mutex whether the mutex should be present or not
  * @tparam spinlock  true will use a spinklock implementation, false will use std::mutex
  */
-template<bool add_mutex, typename mutex_t = core::mutex>
-requires mutex_interface<mutex_t>
+template<bool add_mutex, typename mutex_t = core::mutex, uint32_t count = 1>
+  requires mutex_interface<mutex_t>
 struct plug_mutex
 { 
   constexpr static const bool has_mutex = true;
   
   using mutex_type = mutex_t;
 
+  template<uint32_t index>
   constexpr inline void lock() const noexcept
-  {  _mtx.lock(); }
+  {  
+    static_assert( index < count );
+    _mtx[index].lock(); 
+  }
 
+  template<uint32_t index>
   constexpr inline void unlock() const noexcept
-  {  _mtx.unlock(); }
-
+  { 
+    static_assert( index < count );
+    _mtx[index].unlock(); 
+  }
+  
+  template<uint32_t index>
   constexpr inline bool try_lock() const noexcept
-  {  return _mtx.try_lock(); }
-
-  mutable mutex_type    _mtx;
+  { 
+    static_assert( index < count );
+    return _mtx[index].try_lock(); 
+  }
+  
+  mutable std::array<mutex_type,count>    _mtx;
 };
 
 template<typename mutex_t>
-struct plug_mutex<false,mutex_t> { 
+struct plug_mutex<false,mutex_t,0> { 
   constexpr static const bool has_mutex = false;
 };
 
