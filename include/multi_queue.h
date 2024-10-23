@@ -86,7 +86,7 @@ public:
   /**
    * Clear the structure releasing all allocated memory.
    */
-  constexpr inline void            clear() noexcept
+  constexpr inline void            clear() noexcept(true)
   { 
     for( auto & queue : m_array ) 
       queue.clear(); 
@@ -97,7 +97,7 @@ public:
    * 
    * @return constexpr size_type total items accross all iternal queues.
    */
-  constexpr inline size_type       size() const noexcept
+  constexpr inline size_type       size() const noexcept(true)
   { 
     size_type _size = 0;
     for( auto & queue : m_array ) 
@@ -111,7 +111,7 @@ public:
    * @param id  specify the queue-id.
    * @return constexpr size_type   number of items for the specified queue.
    */
-  constexpr inline size_type       size( const queue_id& id ) const noexcept
+  constexpr inline size_type       size( const queue_id& id ) const noexcept(true)
   { 
     assert( (id >=0) && (id < queues) );
     return m_array[id].size(); 
@@ -127,10 +127,16 @@ public:
    * @return false if queue failed to allocate memory or the queue reaches the max_size
    */
   template<typename value_type>
-  constexpr inline core::result_t  push( const queue_id& id, value_type&& data ) noexcept
+  constexpr inline core::result_t  push( const queue_id& id, value_type&& data ) noexcept(true)
   {
     assert( (id >=0) && (id < queues) );
     return m_array[id].push( std::forward<value_type>(data) );
+  }
+
+  /**/
+  constexpr inline queue_id get_id() const noexcept(true)
+  {
+    return m_th_map.add()%queues;
   }
 
   /**
@@ -142,7 +148,7 @@ public:
    * @return false if queue failed to allocate memory or the queue reaches the max_size   
    */
   template<typename value_type>
-  constexpr inline core::result_t  push( value_type&& data ) noexcept
+  constexpr inline core::result_t  push( value_type&& data ) noexcept(true)
   {
     const queue_id id = m_th_map.add()%queues;
     assert( (id >=0) && (id < queues) );
@@ -157,7 +163,7 @@ public:
    * @return true   in this case @param data is updated with extracted value from the queue.
    * @return false  queue is empty.
    */
-  constexpr inline core::result_t  pop( const queue_id& id, value_type& data ) noexcept
+  constexpr inline core::result_t  pop( const queue_id& id, value_type& data ) noexcept(true)
   {
     assert( (id >=0) && (id < queues) );
     return m_array[id].pop( data );
@@ -170,7 +176,7 @@ public:
    * @return true  in this case @param data is updated with extracted value from the selected queue queue.
    * @return false selected queue is empty, but this doesn't means that all queues are empty.
    */
-  constexpr inline core::result_t  pop( value_type& data ) noexcept
+  constexpr inline core::result_t  pop( value_type& data ) noexcept(true)
   { 
     size_type qid = m_ndx_pop.load( std::memory_order_acquire );
     m_ndx_pop.compare_exchange_strong( qid, ((qid+1)<queues)?(qid+1):0 );
@@ -180,9 +186,9 @@ public:
 protected:
 
 private:
-  core::thread_map<size_type,0>   m_th_map; 
-  std::array<queue_type, queues>  m_array;
-  std::atomic<size_type>          m_ndx_pop;
+  mutable core::thread_map<size_type,0>  m_th_map; 
+  std::array<queue_type, queues>         m_array;
+  std::atomic<size_type>                 m_ndx_pop;
 };
 
 }
