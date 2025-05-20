@@ -96,6 +96,22 @@ public:
 
     return result;
   }
+
+  /* Return a vector of strings containing all registered derived_t */
+  constexpr inline auto get_names() const noexcept(true)
+  {
+    std::vector<std::string> result;
+
+    result.reserve(std::tuple_size<concrete_factories>::value);
+    
+    std::apply( [&result]( auto&&... tuple_item ) {
+                                              (( result.emplace_back( tuple_item.name ) ), ...);
+                                           }, concrete_factories{}
+              );
+
+    return result;
+  }
+
 };
 
 }
