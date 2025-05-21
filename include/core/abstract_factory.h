@@ -26,6 +26,7 @@
 
 #include "config.h"
 #include "core/types.h"
+#include <vector>
 
 namespace core {
 
